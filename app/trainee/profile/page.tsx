@@ -1,6 +1,8 @@
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 
+import ProfileForm from "./profile-form";
+
 export default async function TraineeProfilePage() {
   const { user } = await requireRole("trainee");
 
@@ -26,47 +28,30 @@ export default async function TraineeProfilePage() {
         My Profile
       </h1>
 
-      <div className="mt-6 space-y-2">
-        <p>
-          <strong>Name:</strong>{" "}
-          {profile?.full_name ?? "Not provided"}
-        </p>
+      <p className="mt-2 text-sm text-gray-600">
+        {profile?.email}
+      </p>
 
-        <p>
-          <strong>Email:</strong>{" "}
-          {profile?.email ?? "Not provided"}
-        </p>
+      <ProfileForm
+        initialData={{
+          full_name: profile?.full_name ?? "",
+          designation: profile?.designation ?? "",
+          department: profile?.department ?? "",
+          bio: profile?.bio ?? "",
 
-        <p>
-          <strong>Designation:</strong>{" "}
-          {profile?.designation ?? "Not provided"}
-        </p>
+          employee_code:
+            traineeProfile?.employee_code ?? "",
 
-        <p>
-          <strong>Department:</strong>{" "}
-          {profile?.department ?? "Not provided"}
-        </p>
+          qualifications:
+            traineeProfile?.qualifications ?? "",
 
-        <p>
-          <strong>Employee Code:</strong>{" "}
-          {traineeProfile?.employee_code ?? "Not provided"}
-        </p>
+          work_experience:
+            traineeProfile?.work_experience ?? "",
 
-        <p>
-          <strong>Qualifications:</strong>{" "}
-          {traineeProfile?.qualifications ?? "Not provided"}
-        </p>
-
-        <p>
-          <strong>Work Experience:</strong>{" "}
-          {traineeProfile?.work_experience ?? "Not provided"}
-        </p>
-
-        <p>
-          <strong>Professional Interests:</strong>{" "}
-          {traineeProfile?.professional_interests ?? "Not provided"}
-        </p>
-      </div>
+          professional_interests:
+            traineeProfile?.professional_interests ?? "",
+        }}
+      />
     </main>
   );
 }
