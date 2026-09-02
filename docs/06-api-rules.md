@@ -86,7 +86,7 @@ Public browser-safe environment variables may use names such as:
 
 `NEXT_PUBLIC_SUPABASE_URL`
 
-`NEXT_PUBLIC_SUPABASE_ANON_KEY`
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 
 These values may be used by browser code.
 

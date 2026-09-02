@@ -5,6 +5,8 @@ import { requireRole } from "@/lib/auth/require-role";
 
 import { enrollInCourse } from "../actions";
 
+import Link from "next/link";
+
 type CoursePageProps = {
   params: Promise<{
     slug: string;
@@ -175,16 +177,23 @@ export default async function CoursePage({
 
       <section className="mt-10 border-t pt-6">
         {enrollment ? (
-          <div>
-            <p className="font-medium">
-              You are enrolled in this course.
-            </p>
+  <div>
+    <p className="font-medium">
+      You are enrolled in this course.
+    </p>
 
-            <p className="mt-1 text-sm text-gray-600">
-              Progress: {Number(enrollment.progress_percentage)}%
-            </p>
-          </div>
-        ) : (
+    <p className="mt-1 text-sm text-gray-600">
+      Progress: {Number(enrollment.progress_percentage)}%
+    </p>
+
+    <Link
+      href={`/trainee/courses/${course.slug}`}
+      className="mt-4 inline-block rounded-md bg-black px-4 py-2 text-white"
+    >
+      Continue Learning
+    </Link>
+  </div>
+) : (
           <form action={enrollInCourse}>
             <input
               type="hidden"
