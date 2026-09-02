@@ -116,10 +116,10 @@ export default async function MyLearningPage() {
                 </div>
 
                 <Link
-                  href={`/courses/${course.slug}`}
+                  href={`/trainee/courses/${course.slug}`}
                   className="mt-5 inline-block rounded-md border px-4 py-2 text-sm"
                 >
-                  View Course
+                  Continue Learning
                 </Link>
               </article>
             );
