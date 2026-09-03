@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,13 +34,24 @@ export default async function TraineeCompetenciesPage() {
 
   return (
     <main className="p-8">
-      <h1 className="text-2xl font-semibold">
-        My Competencies
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">
+            My Competencies
+          </h1>
 
-      <p className="mt-2 text-gray-600">
-        Your current competency profile and development targets.
-      </p>
+          <p className="mt-2 text-gray-600">
+            Your current competency profile and development targets.
+          </p>
+        </div>
+
+        <Link
+          href="/trainee/recommendations"
+          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+        >
+          View Recommended Learning →
+        </Link>
+      </div>
 
       <div className="mt-8 space-y-4">
         {data?.map((item) => {
