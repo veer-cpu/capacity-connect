@@ -2,6 +2,11 @@ import Link from "next/link";
 
 import { getTrainerCourseDetail } from "@/lib/trainer/get-course-detail";
 import { getTrainerCourseTrainees } from "@/lib/trainer/get-course-trainees";
+import {
+  deleteCourseResource,
+  uploadCourseResource,
+} from "./resource-actions";
+import { getTrainerCourseResources } from "@/lib/trainer/get-course-resources";
 type PageProps = {
   params: Promise<{
     slug: string;
@@ -17,6 +22,10 @@ export default async function TrainerCoursePage({
     await getTrainerCourseDetail(slug);
 const trainees =
   await getTrainerCourseTrainees(
+    course.id
+  );
+  const resources =
+  await getTrainerCourseResources(
     course.id
   );
   return (
@@ -185,7 +194,266 @@ const trainees =
           </div>
         )}
       </section>
+<section className="mt-10">
+  <h2 className="text-xl font-semibold">
+    Learning Materials
+  </h2>
 
+  <p className="mt-2 text-sm text-gray-600">
+    Upload course resources such as PDFs,
+    presentations, documents, and recorded lectures.
+  </p>
+
+  <form
+    action={uploadCourseResource}
+    className="mt-6 rounded-xl border p-6"
+  >
+    <input
+      type="hidden"
+      name="courseId"
+      value={course.id}
+    />
+
+    <input
+      type="hidden"
+      name="courseSlug"
+      value={course.slug}
+    />
+
+    <div className="grid gap-5 sm:grid-cols-2">
+      <div>
+        <label
+          htmlFor="title"
+          className="text-sm font-medium"
+        >
+          Resource Title
+        </label>
+
+        <input
+          id="title"
+          name="title"
+          required
+          maxLength={150}
+          className="mt-2 w-full rounded-md border px-3 py-2"
+          placeholder="Radar Interpretation Notes"
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="resourceType"
+          className="text-sm font-medium"
+        >
+          Resource Type
+        </label>
+
+        <select
+          id="resourceType"
+          name="resourceType"
+          required
+          className="mt-2 w-full rounded-md border px-3 py-2"
+        >
+          <option value="pdf">
+            PDF
+          </option>
+
+          <option value="presentation">
+            Presentation
+          </option>
+
+          <option value="document">
+            Document
+          </option>
+
+          <option value="video">
+            Video
+          </option>
+
+          <option value="other">
+            Other
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label
+          htmlFor="lessonId"
+          className="text-sm font-medium"
+        >
+          Attach to Lesson
+        </label>
+
+        <select
+          id="lessonId"
+          name="lessonId"
+          className="mt-2 w-full rounded-md border px-3 py-2"
+        >
+          <option value="">
+            Course-wide resource
+          </option>
+
+          {course.modules.flatMap(
+            (module) =>
+              module.lessons.map(
+                (lesson) => (
+                  <option
+                    key={lesson.id}
+                    value={lesson.id}
+                  >
+                    {module.title}
+                    {" — "}
+                    {lesson.title}
+                  </option>
+                )
+              )
+          )}
+        </select>
+      </div>
+
+      <div>
+        <label
+          htmlFor="file"
+          className="text-sm font-medium"
+        >
+          File
+        </label>
+
+        <input
+          id="file"
+          name="file"
+          type="file"
+          required
+          accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.mp4"
+          className="mt-2 block w-full text-sm"
+        />
+
+        <p className="mt-2 text-xs text-gray-500">
+          Maximum size: 50 MB
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-5">
+      <label
+        htmlFor="description"
+        className="text-sm font-medium"
+      >
+        Description
+      </label>
+
+      <textarea
+        id="description"
+        name="description"
+        rows={3}
+        maxLength={500}
+        className="mt-2 w-full rounded-md border px-3 py-2"
+        placeholder="Optional description of this material."
+      />
+    </div>
+
+    <button
+      type="submit"
+      className="mt-5 rounded-md bg-black px-5 py-2 text-white"
+    >
+      Upload Resource
+    </button>
+  </form>
+    {resources.length === 0 ? (
+    <div className="mt-6 rounded-xl border p-6">
+      <h3 className="font-semibold">
+        No learning materials
+      </h3>
+
+      <p className="mt-2 text-sm text-gray-600">
+        No resources have been uploaded to this course yet.
+      </p>
+    </div>
+  ) : (
+    <div className="mt-6 space-y-3">
+      {resources.map(
+        (resource) => (
+          <article
+            key={resource.id}
+            className="flex flex-col justify-between gap-4 rounded-xl border p-5 sm:flex-row sm:items-center"
+          >
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold">
+                  {resource.title}
+                </h3>
+
+                <span className="rounded-full border px-2 py-1 text-xs capitalize">
+                  {resource.resourceType}
+                </span>
+              </div>
+
+              {resource.description && (
+                <p className="mt-2 text-sm text-gray-600">
+                  {resource.description}
+                </p>
+              )}
+
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
+                <span>
+                  {formatFileSize(
+                    resource.fileSizeBytes
+                  )}
+                </span>
+
+                <span>
+                  Uploaded{" "}
+                  {new Date(
+                    resource.createdAt
+                  ).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+
+           <div className="flex flex-wrap gap-2">
+  {resource.signedUrl ? (
+    <a
+      href={resource.signedUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="rounded-md border px-4 py-2 text-center text-sm"
+    >
+      Open Resource
+    </a>
+  ) : (
+    <span className="rounded-md border px-4 py-2 text-sm text-gray-500">
+      File unavailable
+    </span>
+  )}
+
+  <form
+    action={deleteCourseResource}
+  >
+    <input
+      type="hidden"
+      name="resourceId"
+      value={resource.id}
+    />
+
+    <input
+      type="hidden"
+      name="courseId"
+      value={course.id}
+    />
+
+    <button
+      type="submit"
+      className="rounded-md border px-4 py-2 text-sm"
+    >
+      Delete
+    </button>
+  </form>
+</div>
+          </article>
+        )
+      )}
+    </div>
+  )}
+</section>
 <section className="mt-10">
   <h2 className="text-xl font-semibold">
     Enrolled Trainees
@@ -332,6 +600,29 @@ const trainees =
     </main>
   );
 }
+function formatFileSize(
+  bytes: number
+): string {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
+  const kilobytes =
+    bytes / 1024;
+
+  if (kilobytes < 1024) {
+    return `${kilobytes.toFixed(
+      1
+    )} KB`;
+  }
+
+  const megabytes =
+    kilobytes / 1024;
+
+  return `${megabytes.toFixed(
+    1
+  )} MB`;
+}
 
 function InfoCard({
   label,
@@ -339,7 +630,8 @@ function InfoCard({
 }: {
   label: string;
   value: string | number;
-}) {
+})
+ {
   return (
     <div className="rounded-xl border p-5">
       <p className="text-sm text-gray-500">
@@ -350,5 +642,7 @@ function InfoCard({
         {value}
       </p>
     </div>
+
   );
+  
 }
