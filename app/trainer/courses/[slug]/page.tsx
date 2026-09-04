@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { getTrainerCourseDetail } from "@/lib/trainer/get-course-detail";
-
+import { getTrainerCourseTrainees } from "@/lib/trainer/get-course-trainees";
 type PageProps = {
   params: Promise<{
     slug: string;
@@ -15,7 +15,10 @@ export default async function TrainerCoursePage({
 
   const course =
     await getTrainerCourseDetail(slug);
-
+const trainees =
+  await getTrainerCourseTrainees(
+    course.id
+  );
   return (
     <main className="mx-auto max-w-6xl p-8">
       <section>
@@ -183,16 +186,133 @@ export default async function TrainerCoursePage({
         )}
       </section>
 
-      <section className="mt-10 rounded-xl border p-6">
-        <h2 className="text-xl font-semibold">
-          Enrolled Trainees
-        </h2>
+<section className="mt-10">
+  <h2 className="text-xl font-semibold">
+    Enrolled Trainees
+  </h2>
 
-        <p className="mt-2 text-sm text-gray-600">
-          Trainee participation and progress will be shown here in the
-          next trainer slice.
-        </p>
-      </section>
+  <p className="mt-2 text-sm text-gray-600">
+    Monitor enrollment status and course progress for trainees
+    assigned to this course.
+  </p>
+
+  {trainees.length === 0 ? (
+    <div className="mt-5 rounded-xl border p-6">
+      <h3 className="font-semibold">
+        No enrolled trainees
+      </h3>
+
+      <p className="mt-2 text-sm text-gray-600">
+        No trainees are currently enrolled in this course.
+      </p>
+    </div>
+  ) : (
+    <div className="mt-5 overflow-x-auto rounded-xl border">
+      <table className="w-full text-left text-sm">
+        <thead className="border-b bg-gray-50">
+          <tr>
+            <th className="px-4 py-3 font-medium">
+              Trainee
+            </th>
+
+            <th className="px-4 py-3 font-medium">
+              Department
+            </th>
+
+            <th className="px-4 py-3 font-medium">
+              Status
+            </th>
+
+            <th className="px-4 py-3 font-medium">
+              Progress
+            </th>
+
+            <th className="px-4 py-3 font-medium">
+              Enrolled
+            </th>
+
+            <th className="px-4 py-3 font-medium">
+              Completed
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {trainees.map((trainee) => (
+            <tr
+              key={trainee.traineeId}
+              className="border-b last:border-b-0"
+            >
+              <td className="px-4 py-4">
+                <div>
+                  <p className="font-medium">
+                    {trainee.fullName}
+                  </p>
+
+                  {trainee.designation && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      {trainee.designation}
+                    </p>
+                  )}
+                </div>
+              </td>
+
+              <td className="px-4 py-4">
+                {trainee.department ?? "—"}
+              </td>
+
+              <td className="px-4 py-4 capitalize">
+                {trainee.enrollmentStatus}
+              </td>
+
+              <td className="px-4 py-4">
+                <div className="min-w-32">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-medium">
+                      {trainee.progressPercentage.toFixed(
+                        1
+                      )}
+                      %
+                    </span>
+                  </div>
+
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className="h-full bg-black"
+                      style={{
+                        width: `${Math.min(
+                          Math.max(
+                            trainee.progressPercentage,
+                            0
+                          ),
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </td>
+
+              <td className="px-4 py-4">
+                {new Date(
+                  trainee.enrolledAt
+                ).toLocaleDateString()}
+              </td>
+
+              <td className="px-4 py-4">
+                {trainee.completedAt
+                  ? new Date(
+                      trainee.completedAt
+                    ).toLocaleDateString()
+                  : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</section>
 
       <div className="mt-8 flex flex-wrap gap-3">
         <Link
