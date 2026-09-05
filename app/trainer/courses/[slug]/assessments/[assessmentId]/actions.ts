@@ -20,6 +20,67 @@ const addAssessmentQuestionSchema = z.object({
     message: "Correct option must be 1, 2, 3, or 4.",
   }),
 });
+export async function publishAssessment(
+  formData: FormData
+): Promise<void> {
+  await requireRole("trainer");
+
+  const assessmentIdResult =
+    z.string().uuid().safeParse(
+      formData.get("assessmentId")
+    );
+
+  const courseSlugResult =
+    z.string().min(1).safeParse(
+      formData.get("courseSlug")
+    );
+
+  if (
+    !assessmentIdResult.success ||
+    !courseSlugResult.success
+  ) {
+    throw new Error(
+      "Invalid assessment publishing request."
+    );
+  }
+
+  const supabase =
+    await createClient();
+
+  const {
+    error,
+  } = await supabase.rpc(
+    "publish_trainer_assessment",
+    {
+      p_assessment_id:
+        assessmentIdResult.data,
+    }
+  );
+
+  if (error) {
+    console.error(
+      "Unable to publish assessment:",
+      {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      }
+    );
+
+    throw new Error(
+      `Unable to publish assessment: ${error.message}`
+    );
+  }
+
+  revalidatePath(
+    `/trainer/courses/${courseSlugResult.data}/assessments`
+  );
+
+  revalidatePath(
+    `/trainer/courses/${courseSlugResult.data}/assessments/${assessmentIdResult.data}`
+  );
+}
 
 export async function addAssessmentQuestion(
   formData: FormData

@@ -5,6 +5,7 @@ import { getTrainerAssessmentEditor } from "@/lib/trainer/get-trainer-assessment
 import {
   addAssessmentQuestion,
   deleteAssessmentQuestion,
+  publishAssessment,
 } from "./actions";
 import CoursePage from "@/app/courses/[slug]/page";
 
@@ -42,6 +43,28 @@ export default async function TrainerAssessmentEditorPage({
   return (
     <main className="mx-auto max-w-5xl p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        {editor.assessment.status === "draft" && (
+  <form action={publishAssessment}>
+    <input
+      type="hidden"
+      name="assessmentId"
+      value={assessmentId}
+    />
+
+    <input
+      type="hidden"
+      name="courseSlug"
+      value={slug}
+    />
+
+    <button
+      type="submit"
+      className="rounded-md bg-black px-4 py-2 text-sm text-white"
+    >
+      Publish Assessment
+    </button>
+  </form>
+)}
         <div>
           <Link
             href={`/trainer/courses/${slug}/assessments`}
@@ -57,7 +80,7 @@ export default async function TrainerAssessmentEditorPage({
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${statusBadgeClass(
-              editor.assessment.status
+              editor.assessment.status,
             )}`}
           >
             {editor.assessment.status}
@@ -88,7 +111,9 @@ export default async function TrainerAssessmentEditorPage({
 
       {editor.assessment.status !== "draft" ? (
         <section className="mb-8 rounded-xl border border-dashed border-amber-200 bg-amber-50 p-6 text-amber-900">
-          <p className="font-medium">This assessment is not editable in draft mode.</p>
+          <p className="font-medium">
+            This assessment is not editable in draft mode.
+          </p>
           <p className="mt-1 text-sm">
             Questions can only be added while the assessment is in draft status.
           </p>
@@ -98,11 +123,18 @@ export default async function TrainerAssessmentEditorPage({
           <h2 className="text-xl font-semibold">Add Question</h2>
 
           <form action={addAssessmentQuestion} className="mt-5 space-y-5">
-            <input type="hidden" name="assessmentId" value={editor.assessment.id} />
+            <input
+              type="hidden"
+              name="assessmentId"
+              value={editor.assessment.id}
+            />
             <input type="hidden" name="courseSlug" value={editor.course.slug} />
 
             <div>
-              <label htmlFor="questionText" className="mb-2 block text-sm font-medium">
+              <label
+                htmlFor="questionText"
+                className="mb-2 block text-sm font-medium"
+              >
                 Question
               </label>
               <textarea
@@ -119,7 +151,10 @@ export default async function TrainerAssessmentEditorPage({
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label htmlFor="competencyId" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="competencyId"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Competency mapping
                 </label>
                 <select
@@ -138,7 +173,10 @@ export default async function TrainerAssessmentEditorPage({
               </div>
 
               <div>
-                <label htmlFor="points" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="points"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Points
                 </label>
                 <input
@@ -157,7 +195,10 @@ export default async function TrainerAssessmentEditorPage({
 
             <div className="grid gap-5 md:grid-cols-2">
               <div>
-                <label htmlFor="option1" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="option1"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Option 1
                 </label>
                 <input
@@ -170,7 +211,10 @@ export default async function TrainerAssessmentEditorPage({
               </div>
 
               <div>
-                <label htmlFor="option2" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="option2"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Option 2
                 </label>
                 <input
@@ -183,7 +227,10 @@ export default async function TrainerAssessmentEditorPage({
               </div>
 
               <div>
-                <label htmlFor="option3" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="option3"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Option 3
                 </label>
                 <input
@@ -195,7 +242,10 @@ export default async function TrainerAssessmentEditorPage({
               </div>
 
               <div>
-                <label htmlFor="option4" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="option4"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Option 4
                 </label>
                 <input
@@ -252,47 +302,45 @@ export default async function TrainerAssessmentEditorPage({
             {editor.questions.map((question, index) => (
               <article key={question.id} className="rounded-xl border p-5">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-  <div>
-    <p className="text-sm text-gray-500">
-      Question {question.position}
-    </p>
+                  <div>
+                    <p className="text-sm text-gray-500">
+                      Question {question.position}
+                    </p>
 
-    <h3 className="mt-1 font-semibold">
-      {question.questionText}
-    </h3>
-  </div>
+                    <h3 className="mt-1 font-semibold">
+                      {question.questionText}
+                    </h3>
+                  </div>
 
-  {editor.assessment.status === "draft" && (
-    <form
-      action={deleteAssessmentQuestion}
-    >
-      <input
-        type="hidden"
-        name="questionId"
-        value={question.id}
-      />
+                  {editor.assessment.status === "draft" && (
+                    <form action={deleteAssessmentQuestion}>
+                      <input
+                        type="hidden"
+                        name="questionId"
+                        value={question.id}
+                      />
 
-      <input
-        type="hidden"
-        name="assessmentId"
-        value={editor.assessment.id}
-      />
+                      <input
+                        type="hidden"
+                        name="assessmentId"
+                        value={editor.assessment.id}
+                      />
 
-      <input
-        type="hidden"
-        name="courseSlug"
-        value={editor.course.slug}
-      />
+                      <input
+                        type="hidden"
+                        name="courseSlug"
+                        value={editor.course.slug}
+                      />
 
-      <button
-        type="submit"
-        className="rounded-md border px-3 py-2 text-sm"
-      >
-        Delete Question
-      </button>
-    </form>
-  )}
-</div>
+                      <button
+                        type="submit"
+                        className="rounded-md border px-3 py-2 text-sm"
+                      >
+                        Delete Question
+                      </button>
+                    </form>
+                  )}
+                </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h3 className="text-lg font-semibold">
                     {index + 1}. {question.questionText}
@@ -301,7 +349,11 @@ export default async function TrainerAssessmentEditorPage({
                     <span>Points: {question.points}</span>
                     {question.competencyId ? (
                       <span>
-                        Competency: {editor.competencies.find((competency) => competency.id === question.competencyId)?.name ?? "Mapped"}
+                        Competency:{" "}
+                        {editor.competencies.find(
+                          (competency) =>
+                            competency.id === question.competencyId,
+                        )?.name ?? "Mapped"}
                       </span>
                     ) : (
                       <span>Unmapped</span>
@@ -315,7 +367,8 @@ export default async function TrainerAssessmentEditorPage({
                       key={option.id}
                       className="rounded-md border px-3 py-2 text-sm text-gray-700"
                     >
-                      {String.fromCharCode(65 + optionIndex)}. {option.optionText}
+                      {String.fromCharCode(65 + optionIndex)}.{" "}
+                      {option.optionText}
                     </div>
                   ))}
                 </div>
