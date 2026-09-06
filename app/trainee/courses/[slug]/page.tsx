@@ -2,9 +2,11 @@ import { notFound, redirect } from "next/navigation";
 
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
+import { getTraineeCourseFeedback } from "@/lib/trainee/get-course-feedback";
 import { getTraineeCourseResources } from "@/lib/trainee/get-course-resources";
 
 import { markLessonComplete } from "../actions";
+import { submitCourseFeedback } from "./actions";
 
 type LearningPageProps = {
   params: Promise<{
@@ -26,6 +28,7 @@ export default async function LearningPage({ params }: LearningPageProps) {
         id,
         title,
         slug,
+        trainer_id,
 
         modules (
           id,
@@ -47,12 +50,17 @@ export default async function LearningPage({ params }: LearningPageProps) {
       `,
     )
     .eq("slug", slug)
-    .eq("status", "published")
-    .single();
+.in("status", ["published", "archived"])
+.single();
 
-  if (courseError || !course) {
-    notFound();
-  }
+if (courseError) {
+  console.error("Unable to load trainee course:", courseError);
+  throw new Error("Unable to load course.");
+}
+
+if (!course) {
+  notFound();
+}
 
   const { data: enrollment } = await supabase
     .from("enrollments")
@@ -83,6 +91,7 @@ export default async function LearningPage({ params }: LearningPageProps) {
   );
 
   const resources = await getTraineeCourseResources(course.id);
+  const feedback = await getTraineeCourseFeedback(course.id);
 
   const formatBytes = (bytes: number | null) => {
     if (bytes === null || bytes === undefined) {
@@ -174,6 +183,73 @@ export default async function LearningPage({ params }: LearningPageProps) {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="mt-10 rounded-xl border p-6">
+        <h2 className="text-xl font-semibold">Course Feedback</h2>
+
+        <form action={submitCourseFeedback} className="mt-5 space-y-5">
+          <input type="hidden" name="courseId" value={course.id} />
+          <input type="hidden" name="courseSlug" value={course.slug} />
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Course Rating</span>
+            <select
+              name="courseRating"
+              defaultValue={feedback?.courseRating ?? ""}
+              required
+              className="rounded-md border px-3 py-2"
+            >
+              <option value="" disabled>
+                Select rating
+              </option>
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <option key={rating} value={rating}>
+                  {rating}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {course.trainer_id && (
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">Trainer Rating</span>
+              <select
+                name="trainerRating"
+                defaultValue={feedback?.trainerRating ?? ""}
+                required
+                className="rounded-md border px-3 py-2"
+              >
+                <option value="" disabled>
+                  Select rating
+                </option>
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <option key={rating} value={rating}>
+                    {rating}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Comments</span>
+            <textarea
+              name="comments"
+              maxLength={1000}
+              rows={4}
+              defaultValue={feedback?.comments ?? ""}
+              className="w-full rounded-md border px-3 py-2"
+            />
+          </label>
+
+          <button
+            type="submit"
+            className="rounded-md bg-black px-4 py-2 text-sm text-white"
+          >
+            {feedback ? "Update Feedback" : "Submit Feedback"}
+          </button>
+        </form>
       </section>
 
       <div className="mt-10 space-y-8">
