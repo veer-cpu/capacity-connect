@@ -15,6 +15,36 @@ const createPlanSchema = z.object({
     ),
 });
 
+export async function refreshDevelopmentPlan(): Promise<void> {
+  await requireRole("trainee");
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc(
+    "refresh_development_plan"
+  );
+
+  if (error) {
+    console.error(
+      "Unable to refresh development plan:",
+      {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      }
+    );
+
+    throw new Error(
+      `Unable to refresh development plan: ${error.message}`
+    );
+  }
+
+  revalidatePath(
+    "/trainee/development-plan"
+  );
+}
+
 export async function createDevelopmentPlan(formData: FormData): Promise<void> {
     await requireRole("trainee");
     const parsed = createPlanSchema.safeParse({

@@ -19,6 +19,10 @@ export type DevelopmentPlanItem = {
     trainerMatchScore: number | null;
     rationale: string | null;
     status: string;
+    latestCurrentScore: number | null;
+latestGapScore: number | null;
+latestPriority: "low" | "medium" | "high" | "critical" | null;
+lastEvaluatedAt: string | null;
 };
 
 export type ActiveDevelopmentPlan = {
@@ -46,7 +50,11 @@ export async function getActiveDevelopmentPlan(): Promise<ActiveDevelopmentPlan 
 				competency_id,
 				competencies (name),
 				courses (title, slug),
-				trainer_directory (full_name)
+				trainer_directory (full_name),
+                latest_current_score,
+latest_gap_score,
+latest_priority,
+last_evaluated_at
 			)`
         )
         .eq("trainee_id", user.id)
@@ -96,7 +104,7 @@ export async function getActiveDevelopmentPlan(): Promise<ActiveDevelopmentPlan 
             const trainer = Array.isArray(item.trainer_directory)
                 ? item.trainer_directory[0]
                 : item.trainer_directory;
-
+            
                 
 
             return {
@@ -123,6 +131,21 @@ export async function getActiveDevelopmentPlan(): Promise<ActiveDevelopmentPlan 
                         : Number(item.trainer_match_score),
                 rationale: item.rationale,
                 status: item.status,
+                latestCurrentScore:
+  item.latest_current_score === null
+    ? null
+    : Number(item.latest_current_score),
+
+latestGapScore:
+  item.latest_gap_score === null
+    ? null
+    : Number(item.latest_gap_score),
+
+latestPriority:
+  item.latest_priority,
+
+lastEvaluatedAt:
+  item.last_evaluated_at,
             };
         })
         .sort((left, right) => left.sequenceOrder - right.sequenceOrder);
@@ -134,12 +157,14 @@ const completedItems = nonSkippedItems.filter(
   (item) => item.status === "completed"
 );
 
+
 const progressPercentage =
   nonSkippedItems.length === 0
     ? 0
     : Math.round(
         (completedItems.length / nonSkippedItems.length) * 100
       );
+      
     return {
         id: data.id,
         title: data.title,
