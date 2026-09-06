@@ -28,6 +28,99 @@ const courseSchema = z.object({
 		z.coerce.number().int().min(0).optional()
 	),
 });
+export async function publishCourse(
+  formData: FormData
+): Promise<void> {
+  await requireRole("admin");
+
+  const courseIdResult =
+    z.string().uuid().safeParse(
+      formData.get("courseId")
+    );
+
+  if (!courseIdResult.success) {
+    throw new Error(
+      "Invalid course publishing request."
+    );
+  }
+
+  const supabase =
+    await createClient();
+
+  const { error } =
+    await supabase.rpc(
+      "admin_publish_course",
+      {
+        p_course_id:
+          courseIdResult.data,
+      }
+    );
+
+  if (error) {
+    console.error(
+      "Unable to publish course:",
+      {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      }
+    );
+
+    throw new Error(
+      `Unable to publish course: ${error.message}`
+    );
+  }
+
+  revalidatePath("/admin/courses");
+}
+export async function archiveCourse(
+  formData: FormData
+): Promise<void> {
+  await requireRole("admin");
+
+  const courseIdResult =
+    z.string().uuid().safeParse(
+      formData.get("courseId")
+    );
+
+  if (!courseIdResult.success) {
+    throw new Error(
+      "Invalid course archive request."
+    );
+  }
+
+  const supabase =
+    await createClient();
+
+  const { error } =
+    await supabase.rpc(
+      "admin_archive_course",
+      {
+        p_course_id:
+          courseIdResult.data,
+      }
+    );
+
+  if (error) {
+    console.error(
+      "Unable to archive course:",
+      {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      }
+    );
+
+    throw new Error(
+      `Unable to archive course: ${error.message}`
+    );
+  }
+
+  revalidatePath("/admin/courses");
+}
+
 
 export async function createCourse(formData: FormData): Promise<void> {
 	await requireRole("admin");

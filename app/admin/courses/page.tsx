@@ -1,12 +1,17 @@
 import Link from "next/link";
-
+import {
+  archiveCourse,
+  assignCourseTrainer,
+  createCourse,
+  publishCourse,
+} from "./actions";
 import {
   getAssignableTrainers,
   type AssignableTrainer,
 } from "@/lib/admin/get-assignable-trainers";
 import { getAdminCourses, type AdminCourse } from "@/lib/admin/get-courses";
 import { requireRole } from "@/lib/auth/require-role";
-import { assignCourseTrainer, createCourse } from "./actions";
+
 
 export default async function AdminCoursesPage() {
   await requireRole("admin");
@@ -151,6 +156,7 @@ export default async function AdminCoursesPage() {
                     <th className="px-4 py-3 font-medium">Trainer</th>
                     <th className="px-4 py-3 font-medium">Duration</th>
                     <th className="px-4 py-3 font-medium">Created</th>
+                    <th className="px-4 py-3 font-medium">Management</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,6 +196,38 @@ function CourseRow({
       <td className="px-4 py-4 capitalize">{course.difficulty}</td>
       <td className="px-4 py-4">{course.category ?? "—"}</td>
       <td className="px-4 py-4">
+              {course.status === "draft" && (
+  <form action={publishCourse}>
+    <input
+      type="hidden"
+      name="courseId"
+      value={course.courseId}
+    />
+
+    <button
+      type="submit"
+      className="rounded-md border px-3 py-2 text-sm"
+    >
+      Publish Course
+    </button>
+  </form>
+)}
+{course.status === "published" && (
+  <form action={archiveCourse}>
+    <input
+      type="hidden"
+      name="courseId"
+      value={course.courseId}
+    />
+
+    <button
+      type="submit"
+      className="rounded-md border px-3 py-2 text-sm"
+    >
+      Archive Course
+    </button>
+  </form>
+)}
         <p>{course.trainerName ?? "Unassigned"}</p>
         {trainers.length === 0 ? (
           <p className="mt-2 text-xs text-gray-500">
@@ -220,6 +258,7 @@ function CourseRow({
               Assign Trainer
             </button>
           </form>
+          
         )}
       </td>
       <td className="px-4 py-4">
@@ -228,8 +267,19 @@ function CourseRow({
           : `${course.estimatedDurationMinutes} min`}
       </td>
       <td className="px-4 py-4">{formatDate(course.createdAt)}</td>
+      <td className="px-4 py-4">
+        <Link
+          href={`/admin/courses/${course.courseId}`}
+          className="inline-flex rounded-md border px-3 py-2 text-xs font-medium hover:bg-gray-50"
+        >
+          Manage Competencies
+        </Link>
+      </td>
+
     </tr>
+    
   );
+  
 }
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
