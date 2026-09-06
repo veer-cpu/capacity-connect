@@ -1,16 +1,24 @@
 /**
- * Pure deterministic functions for calculating trainer match scores
- * based on verified competency expertise, experience, course relevance, availability,
- * and neutral baseline metrics.
+ * Pure deterministic trainer matching.
  *
  * Locked Formula:
- *   Trainer Match Score =
- *     (40% * Competency Match)
- *   + (20% * Experience)
- *   + (15% * Training Performance [Neutral 50 Fallback])
- *   + (10% * Course Relevance)
- *   + (10% * Availability)
- *   + (5%  * Learner Feedback [Neutral 50 Fallback])
+ *
+ * Trainer Match Score =
+ *   (40% * Competency Match)
+ * + (20% * Experience)
+ * + (15% * Training Performance)
+ * + (10% * Course Relevance)
+ * + (10% * Availability)
+ * + (5%  * Learner Feedback)
+ *
+ * Training Performance is derived from:
+ * - latest assessment outcomes
+ * - course completion
+ * - competency improvement
+ *
+ * Learner Feedback uses a confidence-adjusted rating.
+ *
+ * Neutral priors are used only for genuine cold-start cases.
  */
 
 export type CompetencyGapInput = {
@@ -37,6 +45,26 @@ export type TrainerInput = {
     expertiseScore: number;
     yearsExperience: number | null;
   }>;
+
+  performanceScore: number;
+  feedbackScore: number;
+
+  performanceEvidence: {
+    assessmentSampleCount: number;
+    averageAssessmentScore: number | null;
+
+    enrollmentSampleCount: number;
+    completionRate: number | null;
+
+    improvementSampleCount: number;
+    competencyImprovementRate: number | null;
+  };
+
+  feedbackEvidence: {
+    feedbackCount: number;
+    averageTrainerRating: number | null;
+  };
+
   assignedCourseCompetencyIds: Set<string>; // competency IDs of published courses assigned to this trainer
 };
 
@@ -106,12 +134,13 @@ export function calculateCourseRelevanceScore(
  * Generates a human-readable deterministic explanation string for trainer match.
  */
 export function generateTrainerExplanation(
-  
   competencyName: string,
   expertiseScore: number,
   yearsOfExperience: number | null | undefined,
   availabilityStatus: string | null | undefined,
-  isAssignedToCourse: boolean
+  isAssignedToCourse: boolean,
+  performanceScore: number,
+  feedbackScore: number
 ): string {
   const yrs = yearsOfExperience ?? 0;
   const expStr = yrs >= 5 ? "5+ years" : `${yrs} year${yrs === 1 ? "" : "s"}`;
@@ -120,7 +149,13 @@ export function generateTrainerExplanation(
     ? " and actively teaches a course mapped to this area"
     : "";
 
-  return `Recommended for ${competencyName} due to verified expertise (${expertiseScore}%), ${expStr} experience, and ${availStr} availability status${courseStr}.`;
+  return `Recommended for ${competencyName} due to verified expertise (${expertiseScore.toFixed(
+    1
+  )}%), ${expStr} experience, ${availStr} availability, training performance score ${performanceScore.toFixed(
+    1
+  )}/100, and learner feedback score ${feedbackScore.toFixed(
+    1
+  )}/100${courseStr}. Course relevance is included where applicable.`;
 }
 
 /**
@@ -131,14 +166,16 @@ export function calculateSingleTrainerMatch(
   expertiseScore: number,
   yearsOfExperience: number | null | undefined,
   availabilityStatus: string | null | undefined,
-  isAssignedToMappedCourse: boolean
+  isAssignedToMappedCourse: boolean,
+  performanceScore: number,
+  feedbackScore: number
 ): SingleTrainerMatchScore {
   const compScore = Math.min(Math.max(expertiseScore, 0), 100);
   const expScore = calculateExperienceScore(yearsOfExperience);
-  const perfScore = 50; // Neutral baseline (metric unavailable)
+  const perfScore = Math.min(Math.max(performanceScore, 0), 100);
   const relScore = calculateCourseRelevanceScore(isAssignedToMappedCourse, true);
   const availScore = calculateAvailabilityScore(availabilityStatus);
-  const feedScore = 50; // Neutral baseline (metric unavailable)
+  const feedScore = Math.min(Math.max(feedbackScore, 0), 100);
 
   const rawScore =
     0.4 * compScore +
@@ -151,12 +188,13 @@ export function calculateSingleTrainerMatch(
   const score = Number(rawScore.toFixed(1));
 
   const explanation = generateTrainerExplanation(
-   
     gap.competencyName,
     compScore,
     yearsOfExperience,
     availabilityStatus,
-    isAssignedToMappedCourse
+    isAssignedToMappedCourse,
+    perfScore,
+    feedScore
   );
 
   return {
@@ -201,7 +239,9 @@ export function aggregateTrainerMatch(
         vc.expertiseScore,
         trainer.yearsOfExperience ?? vc.yearsExperience,
         trainer.availabilityStatus,
-        isAssigned
+        isAssigned,
+        trainer.performanceScore,
+        trainer.feedbackScore
       );
       matchingScores.push(match);
     }
