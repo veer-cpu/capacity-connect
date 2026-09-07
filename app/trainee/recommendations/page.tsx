@@ -1,161 +1,149 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/layout/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
 import { getCourseRecommendations } from "@/lib/competency/get-course-recommendations";
 
 export default async function TraineeRecommendationsPage() {
   const { activeGaps, recommendations } = await getCourseRecommendations();
-
   return (
-    <main className="p-6 sm:p-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Recommended Learning</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Courses recommended based on your active competency gaps and development targets.
-        </p>
-      </div>
-
+    <div className="space-y-8">
+      <PageHeader
+        title="Course Recommendations"
+        description="Training opportunities ranked against your current competency gaps."
+        actions={
+          <Link
+            href="/trainee/dashboard"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to dashboard
+          </Link>
+        }
+      />
       {activeGaps.length === 0 ? (
-        <section className="mt-8 rounded-xl border p-8 text-center shadow-sm">
-          <div className="mx-auto max-w-md">
-            <h2 className="text-lg font-semibold text-gray-900">
-              No Active Gaps
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              All current competency targets are met. No gap-driven learning
-              recommendations are needed right now.
-            </p>
-            <div className="mt-6">
-              <Link
-                href="/courses"
-                className="inline-block rounded-md bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-gray-800"
-              >
-                Browse Course Catalogue
-              </Link>
-            </div>
-          </div>
-        </section>
-      ) : recommendations.length === 0 ? (
-        <section className="mt-8 rounded-xl border border-dashed p-8 text-center text-gray-500">
-          <p className="text-base font-medium">
-            No published courses currently match your active skill gaps.
-          </p>
-          <p className="mt-1 text-sm">
-            Check back later as new training materials are published.
-          </p>
-          <div className="mt-6">
+        <Alert>
+          <AlertTitle>No Active Gaps</AlertTitle>
+          <AlertDescription>
+            All current competency targets are met. No gap-driven learning
+            recommendations are needed right now.
+            <br />
             <Link
               href="/courses"
-              className="inline-block rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="mt-3 inline-flex text-primary underline underline-offset-4"
             >
-              Browse All Courses
+              Browse Course Catalogue
             </Link>
-          </div>
-        </section>
+          </AlertDescription>
+        </Alert>
+      ) : recommendations.length === 0 ? (
+        <Alert>
+          <AlertTitle>No matching courses</AlertTitle>
+          <AlertDescription>
+            No published courses currently match your active skill gaps. Check
+            back later as new training materials are published.
+          </AlertDescription>
+        </Alert>
       ) : (
         <>
-          {/* Active Gaps Driving Recommendations */}
-          <section className="mt-6 rounded-lg bg-gray-50 p-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-              Active Skill Gaps Driving Recommendations
-            </h2>
-            <div className="mt-2 flex flex-wrap gap-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Skill Gaps</CardTitle>
+              <CardDescription>
+                Competency gaps driving these recommendations.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-2">
               {activeGaps.map((gap) => (
-                <span
-                  key={gap.competencyId}
-                  className="inline-flex items-center rounded-md bg-white px-3 py-1 text-xs font-medium text-gray-800 border"
-                >
-                  {gap.competencyName}:{" "}
-                  <strong className="ml-1 text-black">
-                    {gap.gapScore} pts gap
-                  </strong>
-                </span>
+                <Badge key={gap.competencyId} variant="secondary">
+                  {gap.competencyName}: {gap.gapScore} pts
+                </Badge>
               ))}
-            </div>
-          </section>
-
-          {/* Recommendations Cards */}
-          <section className="mt-8 space-y-6">
+            </CardContent>
+          </Card>
+          <Separator />
+          <div className="space-y-5">
             {recommendations.map((rec) => {
               const course = rec.course;
               const primary = rec.primaryDriver;
-              const secondaryMatches = rec.allMatchingScores.slice(1);
-
+              const secondary = rec.allMatchingScores.slice(1);
               return (
-                <article
-                  key={course.id}
-                  className="rounded-xl border p-6 shadow-sm transition hover:shadow-md"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        {course.category && <span>{course.category}</span>}
-                        {course.category && course.difficulty && <span>•</span>}
-                        {course.difficulty && (
-                          <span className="capitalize">{course.difficulty}</span>
-                        )}
+                <Card key={course.id}>
+                  <CardHeader>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <CardTitle>{course.title}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {course.category ?? "Training course"}
+                        </CardDescription>
                       </div>
-
-                      <h2 className="mt-1 text-xl font-semibold text-gray-900">
-                        {course.title}
-                      </h2>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block rounded-full bg-black px-3.5 py-1 text-sm font-bold text-white">
+                      <Badge variant="default">
                         {rec.recommendationScore}% Match
-                      </span>
+                      </Badge>
                     </div>
-                  </div>
-
-                  {course.description && (
-                    <p className="mt-3 text-sm text-gray-600">
-                      {course.description}
-                    </p>
-                  )}
-
-                  {/* Deterministic Recommendation Explanation Box */}
-                  <div className="mt-4 rounded-lg bg-blue-50/70 border border-blue-100 p-4">
-                    <p className="text-xs font-semibold text-blue-900 uppercase tracking-wider">
-                      Why Recommended
-                    </p>
-                    <p className="mt-1 text-sm text-blue-950 font-medium">
-                      {primary.explanation}
-                    </p>
-                  </div>
-
-                  {/* Secondary Mapped Competencies if any */}
-                  {secondaryMatches.length > 0 && (
-                    <div className="mt-3 text-xs text-gray-500">
-                      <span>Also addresses: </span>
-                      {secondaryMatches.map((m, idx) => (
-                        <span key={m.competencyId}>
-                          {m.competencyName} ({m.score}% match)
-                          {idx < secondaryMatches.length - 1 ? ", " : ""}
-                        </span>
-                      ))}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {course.description && (
+                      <p className="text-sm text-muted-foreground">
+                        {course.description}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="capitalize">
+                        {course.difficulty}
+                      </Badge>
+                      {course.estimatedDurationMinutes && (
+                        <Badge variant="outline">
+                          {course.estimatedDurationMinutes} mins
+                        </Badge>
+                      )}
                     </div>
-                  )}
-
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t pt-4 text-xs text-gray-500">
-                    <span>
-                      Duration:{" "}
-                      {course.estimatedDurationMinutes
-                        ? `${course.estimatedDurationMinutes} mins`
-                        : "Self-paced"}
-                    </span>
-
+                    <div>
+                      <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+                        <span>Recommendation score</span>
+                        <span>{rec.recommendationScore}%</span>
+                      </div>
+                      <Progress value={rec.recommendationScore} />
+                    </div>
+                    <div className="rounded-lg bg-muted/50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Why Recommended
+                      </p>
+                      <p className="mt-1 text-sm">{primary.explanation}</p>
+                    </div>
+                    {secondary.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Also addresses:{" "}
+                        {secondary
+                          .map(
+                            (match) =>
+                              `${match.competencyName} (${match.score}%)`,
+                          )
+                          .join(", ")}
+                      </p>
+                    )}
                     <Link
                       href={`/courses/${course.slug}`}
-                      className="inline-block rounded-md bg-black px-4 py-2 text-xs font-medium text-white hover:bg-gray-800"
+                      className={buttonVariants({ size: "sm" })}
                     >
-                      View Course Details →
+                      View Course
                     </Link>
-                  </div>
-                </article>
+                  </CardContent>
+                </Card>
               );
             })}
-          </section>
+          </div>
         </>
       )}
-    </main>
+    </div>
   );
 }

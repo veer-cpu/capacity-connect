@@ -1,5 +1,16 @@
 import Link from "next/link";
 
+import { PageHeader } from "@/components/layout/page-header";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   getStaffDevelopmentPlanDetail,
   type StaffDevelopmentPlanDetail,
@@ -14,43 +25,59 @@ export default async function TrainerDevelopmentPlanDetailPage({
   await requireRole("trainer");
   const { planId } = await params;
   const plan = await getStaffDevelopmentPlanDetail(planId);
-
-  if (!plan) {
-    return <NotFoundPlan />;
-  }
-
-  return <PlanDetail plan={plan} backHref="/trainer/development-plans" />;
+  if (!plan)
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          Development plan not found or unavailable.
+        </CardContent>
+      </Card>
+    );
+  return <PlanDetail plan={plan} />;
 }
 
-function PlanDetail({
-  plan,
-  backHref,
-}: {
-  plan: StaffDevelopmentPlanDetail;
-  backHref: string;
-}) {
+function PlanDetail({ plan }: { plan: StaffDevelopmentPlanDetail }) {
   return (
-    <main className="mx-auto max-w-7xl p-8">
-      <Link href={backHref} className="text-sm text-gray-500 hover:text-black">
-        Back to development plans
-      </Link>
-      <div className="mt-4 rounded-xl border bg-white p-6 shadow-sm">
-        <h1 className="text-3xl font-semibold">{plan.title}</h1>
-        <div className="mt-4 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
-          <span>Trainee: {plan.traineeName ?? "Unnamed trainee"}</span>
-          <span>Department: {plan.department ?? "—"}</span>
-          <span>Designation: {plan.designation ?? "—"}</span>
-          <span>Status: {plan.status}</span>
-          <span>Started: {formatDate(plan.startDate)}</span>
-          <span>Target: {formatDate(plan.targetDate)}</span>
-        </div>
-      </div>
-      <div className="mt-8 space-y-5">
+    <div className="space-y-8">
+      <PageHeader
+        title={plan.title}
+        description="Review the learner's competency-development roadmap and current evaluation details."
+        actions={
+          <Link
+            href="/trainer/development-plans"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to development plans
+          </Link>
+        }
+      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Trainee Summary</CardTitle>
+          <CardDescription>
+            {plan.traineeName ?? "Unnamed trainee"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <Detail label="Department" value={plan.department ?? "—"} />
+            <Detail label="Designation" value={plan.designation ?? "—"} />
+            <Detail
+              label="Status"
+              value={<StatusBadge status={plan.status} />}
+            />
+            <Detail label="Started" value={formatDate(plan.startDate)} />
+            <Detail label="Target Date" value={formatDate(plan.targetDate)} />
+          </div>
+        </CardContent>
+      </Card>
+      <Separator />
+      <div className="space-y-5">
         {plan.items.map((item) => (
           <PlanItem key={item.id} item={item} />
         ))}
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -60,49 +87,83 @@ function PlanItem({
   item: StaffDevelopmentPlanDetail["items"][number];
 }) {
   return (
-    <article className="rounded-xl border bg-white p-6 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-gray-500">Step {item.sequenceOrder}</p>
-          <h2 className="mt-1 text-xl font-semibold">{item.competencyName}</h2>
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Step {item.sequenceOrder}
+            </p>
+            <CardTitle className="mt-1">{item.competencyName}</CardTitle>
+          </div>
+          <StatusBadge status={item.status} />
         </div>
-        <span className="rounded-full border px-2.5 py-1 text-xs">
-          {item.status}
-        </span>
-      </div>
-      <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-        <span>Original Current: {formatScore(item.originalCurrentScore)}</span>
-        <span>Latest Current: {formatScore(item.latestCurrentScore)}</span>
-        <span>Target: {formatScore(item.targetScore)}</span>
-        <span>Original Gap: {formatScore(item.originalGapScore)}</span>
-        <span>Latest Gap: {formatScore(item.latestGapScore)}</span>
-        <span>Original Priority: {item.originalPriority}</span>
-        <span>Latest Priority: {item.latestPriority ?? "—"}</span>
-        <span>Last Evaluated: {formatDate(item.lastEvaluatedAt)}</span>
-      </div>
-      <div className="mt-5 grid gap-3 text-sm md:grid-cols-2">
-        <span>Recommended Course: {item.recommendedCourseTitle ?? "None"}</span>
-        <span>
-          Recommended Trainer: {item.recommendedTrainerName ?? "None"}
-        </span>
-      </div>
-      {item.rationale && (
-        <p className="mt-5 text-sm text-gray-600">{item.rationale}</p>
-      )}
-    </article>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Detail
+            label="Original Current"
+            value={formatScore(item.originalCurrentScore)}
+          />
+          <Detail
+            label="Latest Current"
+            value={formatScore(item.latestCurrentScore)}
+          />
+          <Detail label="Target" value={formatScore(item.targetScore)} />
+          <Detail
+            label="Original Gap"
+            value={formatScore(item.originalGapScore)}
+          />
+          <Detail label="Latest Gap" value={formatScore(item.latestGapScore)} />
+          <Detail
+            label="Original Priority"
+            value={<StatusBadge status={item.originalPriority} />}
+          />
+          <Detail
+            label="Latest Priority"
+            value={
+              item.latestPriority ? (
+                <StatusBadge status={item.latestPriority} />
+              ) : (
+                "—"
+              )
+            }
+          />
+          <Detail
+            label="Last Evaluated"
+            value={formatDate(item.lastEvaluatedAt)}
+          />
+        </div>
+        <Separator />
+        <div className="grid gap-3 text-sm md:grid-cols-2">
+          <Detail
+            label="Recommended Course"
+            value={item.recommendedCourseTitle ?? "None"}
+          />
+          <Detail
+            label="Recommended Trainer"
+            value={item.recommendedTrainerName ?? "None"}
+          />
+        </div>
+        {item.rationale && (
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">
+              Rationale
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-sm">{item.rationale}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-function NotFoundPlan() {
+function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <main className="p-8">
-      <Link href="/trainer/development-plans" className="text-sm text-gray-500">
-        Back to development plans
-      </Link>
-      <p className="mt-6 text-gray-600">
-        Development plan not found or unavailable.
-      </p>
-    </main>
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <div className="mt-1 font-medium">{value}</div>
+    </div>
   );
 }
 function formatScore(value: number | null) {

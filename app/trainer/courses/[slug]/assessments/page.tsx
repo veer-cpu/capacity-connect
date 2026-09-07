@@ -1,230 +1,193 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Textarea } from "@/components/ui/textarea";
 import { requireRole } from "@/lib/auth/require-role";
 import { getCourseAssessments } from "@/lib/trainer/get-course-assessments";
 import { getTrainerCourseDetail } from "@/lib/trainer/get-course-detail";
-
 import { createAssessment } from "./actions";
 
-type PageProps = {
-  params: Promise<{
-    slug: string;
-  }>;
-};
-
-function statusBadgeClass(status: string) {
-  switch (status) {
-    case "draft":
-      return "bg-amber-100 text-amber-800 border-amber-200";
-    case "published":
-      return "bg-emerald-100 text-emerald-800 border-emerald-200";
-    case "closed":
-      return "bg-slate-100 text-slate-700 border-slate-200";
-    default:
-      return "bg-gray-100 text-gray-700 border-gray-200";
-  }
-}
+type PageProps = { params: Promise<{ slug: string }> };
 
 export default async function TrainerCourseAssessmentsPage({
   params,
 }: PageProps) {
   await requireRole("trainer");
-
   const { slug } = await params;
-
   const course = await getTrainerCourseDetail(slug);
+  if (!course) notFound();
   const assessments = await getCourseAssessments(course.id);
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Assessments"
+        description={`Manage assessment lifecycle and question authoring for ${course.title}.`}
+        actions={
           <Link
             href={`/trainer/courses/${course.slug}`}
-            className="text-sm text-gray-500 hover:text-black"
-          >
-            ← Back to course
-          </Link>
-          <h1 className="mt-2 text-3xl font-semibold">Assessments</h1>
-        </div>
-      </div>
-
-      <section className="mb-8 rounded-xl border bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm text-gray-500">Course</p>
-            <h2 className="text-xl font-semibold">{course.title}</h2>
-          </div>
-          <Link
-            href={`/trainer/courses/${course.slug}`}
-            className="rounded-md border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             View Course
           </Link>
+        }
+      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Create Assessment</CardTitle>
+          <CardDescription>
+            New assessments begin as drafts and can be published after question
+            authoring.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={createAssessment} className="space-y-5">
+            <input type="hidden" name="courseId" value={course.id} />
+            <div className="grid gap-5 md:grid-cols-2">
+              <Field label="Title">
+                <Input
+                  name="title"
+                  required
+                  minLength={2}
+                  maxLength={150}
+                  placeholder="Safety assessment"
+                />
+              </Field>
+              <Field label="Passing Score (%)">
+                <Input
+                  name="passingScore"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="1"
+                  defaultValue={80}
+                  required
+                />
+              </Field>
+            </div>
+            <Field label="Description">
+              <Textarea
+                name="description"
+                maxLength={1000}
+                rows={4}
+                placeholder="Optional description for this assessment"
+              />
+            </Field>
+            <Field label="Deadline (optional)">
+              <Input name="deadline" type="datetime-local" />
+            </Field>
+            <Button type="submit">Save Draft Assessment</Button>
+          </form>
+        </CardContent>
+      </Card>
+      <Separator />
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">Assessment List</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Draft, published, and closed assessments for this course.
+          </p>
         </div>
-      </section>
-
-      <section className="mb-8 rounded-xl border bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Create assessment</h2>
-
-        <form action={createAssessment} className="mt-5 space-y-5">
-          <input type="hidden" name="courseId" value={course.id} />
-
-          <div>
-            <label htmlFor="title" className="mb-2 block text-sm font-medium">
-              Title
-            </label>
-            <input
-              id="title"
-              name="title"
-              required
-              minLength={2}
-              maxLength={150}
-              className="w-full rounded-md border px-3 py-2"
-              placeholder="Safety assessment"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="description"
-              className="mb-2 block text-sm font-medium"
-            >
-              Description
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              maxLength={1000}
-              rows={4}
-              className="w-full rounded-md border px-3 py-2"
-              placeholder="Optional description for this assessment"
-            />
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="passingScore"
-                className="mb-2 block text-sm font-medium"
-              >
-                Passing score (%)
-              </label>
-              <input
-                id="passingScore"
-                name="passingScore"
-                type="number"
-                min={0}
-                max={100}
-                step="1"
-                defaultValue={80}
-                required
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="deadline"
-                className="mb-2 block text-sm font-medium"
-              >
-                Deadline (optional)
-              </label>
-              <input
-                id="deadline"
-                name="deadline"
-                type="datetime-local"
-                className="w-full rounded-md border px-3 py-2"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-            >
-              Save draft assessment
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section>
-        <h2 className="text-lg font-semibold">Assessment list</h2>
-
         {assessments.length === 0 ? (
-          <div className="mt-4 rounded-xl border border-dashed p-8 text-center text-gray-500">
-            No assessments created yet.
-          </div>
+          <Card>
+            <CardContent className="py-12 text-center text-sm text-muted-foreground">
+              No assessments created yet.
+            </CardContent>
+          </Card>
         ) : (
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4">
             {assessments.map((assessment) => (
-              <article
-                key={assessment.id}
-                className="rounded-xl border bg-white p-5 shadow-sm"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">
-                        {assessment.title}
-                      </h3>
-                      <span
-                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${statusBadgeClass(
-                          assessment.status,
-                        )}`}
-                      >
-                        {assessment.status}
-                      </span>
+              <Card key={assessment.id}>
+                <CardHeader>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <CardTitle>{assessment.title}</CardTitle>
+                      {assessment.description && (
+                        <CardDescription className="mt-1">
+                          {assessment.description}
+                        </CardDescription>
+                      )}
                     </div>
-                    {assessment.description && (
-                      <p className="mt-2 text-sm text-gray-600">
-                        {assessment.description}
-                      </p>
-                    )}
+                    <StatusBadge status={assessment.status} />
                   </div>
-
-                  <Link
-                    href={`/trainer/courses/${course.slug}/assessments/${assessment.id}`}
-                    className="rounded-md border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    {assessment.status === "draft"
-                      ? "Edit Questions"
-                      : "Manage Assessment"}
-                  </Link>
-                </div>
-
-                <div className="mt-4 grid gap-4 text-sm text-gray-700 sm:grid-cols-3">
-                  <div>
-                    <p className="text-gray-500">Passing score</p>
-                    <p className="mt-1 font-medium">
-                      {Number(assessment.passingScore)}%
-                    </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 text-sm sm:grid-cols-3">
+                    <Metric
+                      label="Passing score"
+                      value={`${assessment.passingScore}%`}
+                    />
+                    <Metric
+                      label="Deadline"
+                      value={
+                        assessment.deadline
+                          ? new Date(assessment.deadline).toLocaleString()
+                          : "No deadline"
+                      }
+                    />
+                    <Metric
+                      label="Created"
+                      value={new Date(assessment.createdAt).toLocaleString()}
+                    />
                   </div>
-
-                  <div>
-                    <p className="text-gray-500">Deadline</p>
-                    <p className="mt-1 font-medium">
-                      {assessment.deadline
-                        ? new Date(assessment.deadline).toLocaleString()
-                        : "No deadline"}
-                    </p>
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">
+                      Lifecycle: {assessment.status}
+                    </Badge>
+                    <Link
+                      href={`/trainer/courses/${course.slug}/assessments/${assessment.id}`}
+                      className={buttonVariants({
+                        variant: "outline",
+                        size: "sm",
+                      })}
+                    >
+                      {assessment.status === "draft"
+                        ? "Edit Questions"
+                        : "Manage Assessment"}
+                    </Link>
                   </div>
-
-                  <div>
-                    <p className="text-gray-500">Created</p>
-                    <p className="mt-1 font-medium">
-                      {new Date(assessment.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </article>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
       </section>
-    </main>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="space-y-1.5 text-sm">
+      <span className="block font-medium">{label}</span>
+      {children}
+    </label>
+  );
+}
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 font-medium">{value}</p>
+    </div>
   );
 }

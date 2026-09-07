@@ -1,28 +1,38 @@
 import Link from "next/link";
 
-import { requireRole } from "@/lib/auth/require-role";
+import { PageHeader } from "@/components/layout/page-header";
+import { buttonVariants } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getStaffDevelopmentPlans } from "@/lib/development-plan/get-staff-plans";
+import { requireRole } from "@/lib/auth/require-role";
 
 export default async function AdminDevelopmentPlansPage() {
   await requireRole("admin");
   const plans = await getStaffDevelopmentPlans();
-
   return (
-    <main className="mx-auto max-w-7xl p-8">
-      <Link
-        href="/admin/dashboard"
-        className="text-sm text-gray-500 hover:text-black"
-      >
-        Back to dashboard
-      </Link>
-      <h1 className="mt-2 text-3xl font-semibold">
-        Workforce Development Plans
-      </h1>
-      <p className="mt-2 text-gray-600">
-        Monitor competency-development progress across the organization.
-      </p>
+    <div className="space-y-8">
+      <PageHeader
+        title="Workforce Development Plans"
+        description="Monitor competency-development progress across the organization."
+        actions={
+          <Link
+            href="/admin/dashboard"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to dashboard
+          </Link>
+        }
+      />
       <PlansTable plans={plans} />
-    </main>
+    </div>
   );
 }
 
@@ -33,55 +43,49 @@ function PlansTable({
 }) {
   if (plans.length === 0)
     return (
-      <div className="mt-8 rounded-xl border border-dashed p-8 text-center text-gray-500">
+      <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
         No development plans are available.
       </div>
     );
   return (
-    <div className="mt-8 overflow-hidden rounded-xl border bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-700">
-            <tr>
-              <th className="px-4 py-3">Trainee</th>
-              <th className="px-4 py-3">Department</th>
-              <th className="px-4 py-3">Plan</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Progress</th>
-              <th className="px-4 py-3">Target Date</th>
-              <th className="px-4 py-3">View Plan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plans.map((plan) => (
-              <tr key={plan.planId} className="border-t">
-                <td className="px-4 py-4 font-medium">
-                  {plan.traineeName ?? "Unnamed trainee"}
-                </td>
-                <td className="px-4 py-4">{plan.department ?? "—"}</td>
-                <td className="px-4 py-4">{plan.planTitle}</td>
-                <td className="px-4 py-4">
-                  <span className="rounded-full border px-2.5 py-1 text-xs">
-                    {plan.planStatus}
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  {plan.progressPercentage.toFixed(0)}%
-                </td>
-                <td className="px-4 py-4">{formatDate(plan.targetDate)}</td>
-                <td className="px-4 py-4">
-                  <Link
-                    className="rounded-md border px-3 py-2 text-xs hover:bg-gray-50"
-                    href={`/admin/development-plans/${plan.planId}`}
-                  >
-                    View Plan
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+      <Table>
+        <TableHeader className="bg-muted/40">
+          <TableRow>
+            <TableHead>Trainee</TableHead>
+            <TableHead>Department</TableHead>
+            <TableHead>Plan</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Progress</TableHead>
+            <TableHead>Target Date</TableHead>
+            <TableHead>View Plan</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {plans.map((plan) => (
+            <TableRow key={plan.planId}>
+              <TableCell className="font-medium">
+                {plan.traineeName ?? "Unnamed trainee"}
+              </TableCell>
+              <TableCell>{plan.department ?? "—"}</TableCell>
+              <TableCell>{plan.planTitle}</TableCell>
+              <TableCell>
+                <StatusBadge status={plan.planStatus} />
+              </TableCell>
+              <TableCell>{plan.progressPercentage.toFixed(0)}%</TableCell>
+              <TableCell>{formatDate(plan.targetDate)}</TableCell>
+              <TableCell>
+                <Link
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  href={`/admin/development-plans/${plan.planId}`}
+                >
+                  View Plan
+                </Link>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

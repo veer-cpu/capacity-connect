@@ -1,327 +1,327 @@
 import Link from "next/link";
 
+import { PageHeader } from "@/components/layout/page-header";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { buildDevelopmentPlanPreview } from "@/lib/competency/build-development-plan";
-import { getActiveDevelopmentPlan } from "@/lib/competency/get-development-plan";
+import {
+  getActiveDevelopmentPlan,
+  type ActiveDevelopmentPlan,
+} from "@/lib/competency/get-development-plan";
 import { requireRole } from "@/lib/auth/require-role";
 import {
-    refreshDevelopmentPlan,
-    createDevelopmentPlan,
-    updateDevelopmentPlanItemStatus,
+  createDevelopmentPlan,
+  refreshDevelopmentPlan,
+  updateDevelopmentPlanItemStatus,
 } from "./actions";
 
 export default async function DevelopmentPlanPage() {
-    await requireRole("trainee");
-    const plan = await getActiveDevelopmentPlan();
-
-    return plan ? <ActivePlan plan={plan} /> : <PlanPreview />;
+  await requireRole("trainee");
+  const plan = await getActiveDevelopmentPlan();
+  return plan ? <ActivePlan plan={plan} /> : <PlanPreview />;
 }
 
 async function PlanPreview() {
-    const preview = await buildDevelopmentPlanPreview();
-
-    return (
-        <main className="mx-auto max-w-7xl p-8">
-            <Header />
-            <section className="mt-8">
-                {preview.items.length === 0 ? (
-                    <div className="rounded-xl border border-dashed p-8 text-center text-gray-500">
-                        No active competency gaps are available for a development plan.
-                    </div>
-                ) : (
-                    <>
-                        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
-                            <table className="min-w-full text-left text-sm">
-                                <thead className="bg-gray-50 text-gray-700">
-                                    <tr>
-                                        <th className="px-4 py-3">Sequence</th>
-                                        <th className="px-4 py-3">Competency</th>
-                                        <th className="px-4 py-3">Current</th>
-                                        <th className="px-4 py-3">Target</th>
-                                        <th className="px-4 py-3">Gap</th>
-                                        <th className="px-4 py-3">Priority</th>
-                                        <th className="px-4 py-3">Recommended Course</th>
-                                        <th className="px-4 py-3">Recommended Trainer</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {preview.items.map((item) => (
-                                        <tr key={item.competencyId} className="border-t">
-                                            <td className="px-4 py-4">{item.sequenceOrder}</td>
-                                            <td className="px-4 py-4 font-medium">
-                                                {item.competencyName}
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                {item.currentScore.toFixed(1)}
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                {item.targetScore.toFixed(1)}
-                                            </td>
-                                            <td className="px-4 py-4">{item.gapScore.toFixed(1)}</td>
-                                            <td className="px-4 py-4">
-                                                <PriorityBadge priority={item.priority} />
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                {item.recommendedCourse?.title ?? "None"}
-                                            </td>
-                                            <td className="px-4 py-4">
-                                                {item.recommendedTrainer?.fullName ?? "None"}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <form
-                            action={createDevelopmentPlan}
-                            className="mt-8 max-w-xl space-y-4 rounded-xl border bg-white p-6 shadow-sm"
-                        >
-                            <h2 className="text-xl font-semibold">
-                                Generate Development Plan
-                            </h2>
-                            <label className="block text-sm">
-                                <span className="mb-1 block font-medium">Plan title</span>
-                                <input
-                                    name="title"
-                                    required
-                                    maxLength={120}
-                                    className="w-full rounded-md border px-3 py-2"
-                                />
-                            </label>
-                            <label className="block text-sm">
-                                <span className="mb-1 block font-medium">Target date</span>
-                                <input
-                                    name="targetDate"
-                                    type="date"
-                                    className="rounded-md border px-3 py-2"
-                                />
-                            </label>
-                            <button
-                                type="submit"
-                                className="rounded-md bg-black px-4 py-2 text-sm text-white"
-                            >
-                                Generate Development Plan
-                            </button>
-                        </form>
-                    </>
-                )}
-            </section>
-        </main>
-    );
-}
-
-function ActivePlan({
-    plan,
-}: {
-    plan: Awaited<ReturnType<typeof getActiveDevelopmentPlan>> & object;
-}) {
-    const trackableItems = plan.items.filter((item) => item.status !== "skipped");
-    const completedItems = trackableItems.filter(
-        (item) => item.status === "completed",
-    ).length;
-    const progress =
-        trackableItems.length === 0
-            ? 0
-            : (completedItems / trackableItems.length) * 100;
-
-    return (
-        <main className="mx-auto max-w-7xl p-8">
-            <Header />
-            <form action={refreshDevelopmentPlan}>
-                <button
-                    type="submit"
-                    className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-                >
-                    Re-evaluate Plan
-                </button>
-            </form>
-            <section className="mt-8 rounded-xl border bg-white p-6 shadow-sm">
-                <h2 className="text-2xl font-semibold">{plan.title}</h2>
-                <div className="mt-3 flex flex-wrap gap-4 text-sm text-gray-600">
-                    <span>Started: {formatDate(plan.startDate)}</span>
-                    <span>Target: {formatDate(plan.targetDate)}</span>
-                    <span>Status: {plan.status}</span>
+  const preview = await buildDevelopmentPlanPreview();
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        title="Personalized Development Plan"
+        description="A competency-driven learning roadmap based on your current capacity gaps."
+        actions={
+          <Link
+            href="/trainee/dashboard"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to dashboard
+          </Link>
+        }
+      />
+      {preview.items.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            No active competency gaps are available for a development plan.
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Plan Preview</CardTitle>
+              <CardDescription>
+                Review the recommended sequence before creating your development
+                plan.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Step</TableHead>
+                    <TableHead>Competency</TableHead>
+                    <TableHead>Current</TableHead>
+                    <TableHead>Target</TableHead>
+                    <TableHead>Gap</TableHead>
+                    <TableHead>Priority</TableHead>
+                    <TableHead>Recommended Course</TableHead>
+                    <TableHead>Recommended Trainer</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {preview.items.map((item) => (
+                    <TableRow key={item.competencyId}>
+                      <TableCell>{item.sequenceOrder}</TableCell>
+                      <TableCell className="font-medium">
+                        {item.competencyName}
+                      </TableCell>
+                      <TableCell>{item.currentScore.toFixed(1)}</TableCell>
+                      <TableCell>{item.targetScore.toFixed(1)}</TableCell>
+                      <TableCell>{item.gapScore.toFixed(1)}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={item.priority} />
+                      </TableCell>
+                      <TableCell>
+                        {item.recommendedCourse?.title ?? "None"}
+                      </TableCell>
+                      <TableCell>
+                        {item.recommendedTrainer?.fullName ?? "None"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Create Development Plan</CardTitle>
+              <CardDescription>
+                Save this personalized roadmap and track progress over time.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                action={createDevelopmentPlan}
+                className="grid gap-4 sm:grid-cols-2"
+              >
+                <label className="space-y-1.5 text-sm">
+                  <span className="block font-medium">Plan title</span>
+                  <Input name="title" required maxLength={120} />
+                </label>
+                <label className="space-y-1.5 text-sm">
+                  <span className="block font-medium">Target date</span>
+                  <Input name="targetDate" type="date" />
+                </label>
+                <div>
+                  <Button type="submit">Create Development Plan</Button>
                 </div>
-                <div className="mt-5">
-                    <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{progress.toFixed(0)}%</span>
-                    </div>
-                    <div className="mt-2 h-3 overflow-hidden rounded bg-gray-200">
-                        <div
-                            className="h-full bg-black"
-                            style={{ width: `${progress}%` }}
-                        />
-                    </div>
-                </div>
-            </section>
-
-            <section className="mt-8 space-y-4">
-                {plan.items.map((item) => (
-                    <article key={item.id} className="rounded-xl border p-6">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Step {item.sequenceOrder}
-                                </p>
-
-                                <h3 className="mt-1 text-xl font-semibold">
-                                    {item.competencyName}
-                                </h3>
-                            </div>
-
-                            <span className="rounded-full border px-3 py-1 text-sm capitalize">
-                                {item.status.replace("_", " ")}
-                            </span>
-                        
-
-                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <p className="text-sm text-gray-500">
-                                    Original Current Score
-                                </p>
-                                <p className="font-medium">{item.currentScore}</p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-gray-500">Latest Current Score</p>
-                                <p className="font-medium">
-                                    {item.latestCurrentScore ?? item.currentScore}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-gray-500">Target Score</p>
-                                <p className="font-medium">{item.targetScore}</p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-gray-500">Original Gap</p>
-                                <p className="font-medium">{item.gapScore}</p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-gray-500">Latest Gap</p>
-                                <p className="font-medium">
-                                    {item.latestGapScore ?? item.gapScore}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-gray-500">Original Priority</p>
-                                <p className="font-medium capitalize">{item.priority}</p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-gray-500">Latest Priority</p>
-                                <p className="font-medium capitalize">
-                                    {item.latestPriority ?? item.priority}
-                                </p>
-                            </div>
-
-                            
-                        </div>
-                        <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-                            <div>
-                                Course:{" "}
-                                {item.recommendedCourseSlug ? (
-                                    <Link
-                                        className="text-blue-700 hover:underline"
-                                        href={`/trainee/courses/${item.recommendedCourseSlug}`}
-                                    >
-                                        {item.recommendedCourseTitle}
-                                    </Link>
-                                ) : (
-                                    "None"
-                                )}
-                            </div>
-                            <div>Trainer: {item.recommendedTrainerName ?? "None"}</div>
-                        </div>
-                        {item.rationale && (
-                            <p className="mt-4 text-sm text-gray-600">{item.rationale}</p>
-                        )}
-                        <div className="mt-4 flex flex-wrap items-center gap-3">
-                            
-                            {item.status === "pending" && (
-                                <StatusForm
-                                    itemId={item.id}
-                                    statuses={["in_progress", "skipped"]}
-                                    labels={["Start", "Skip"]}
-                                />
-                            )}
-                            {item.status === "in_progress" && (
-                                <StatusForm
-                                    itemId={item.id}
-                                    statuses={["completed", "skipped"]}
-                                    labels={["Complete", "Skip"]}
-                                />
-                            )}
-                        </div>
-                    </div>
-          </article>
-        ))}
-        </section>
-    </main >
+              </form>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
   );
 }
 
-function StatusForm({
-    itemId,
-    statuses,
-    labels,
-}: {
-    itemId: string;
-    statuses: string[];
-    labels: string[];
-}) {
-    return (
-        <div className="flex gap-2">
-            {statuses.map((status, index) => (
-                <form key={status} action={updateDevelopmentPlanItemStatus}>
-                    <input type="hidden" name="itemId" value={itemId} />
-                    <input type="hidden" name="status" value={status} />
-                    <button
-                        className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-                        type="submit"
-                    >
-                        {labels[index]}
-                    </button>
-                </form>
-            ))}
-        </div>
-    );
+function ActivePlan({ plan }: { plan: ActiveDevelopmentPlan }) {
+  const trackable = plan.items.filter((item) => item.status !== "skipped");
+  const completed = trackable.filter(
+    (item) => item.status === "completed",
+  ).length;
+  const progress =
+    trackable.length === 0 ? 0 : (completed / trackable.length) * 100;
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        title="Personalized Development Plan"
+        description="A competency-driven learning roadmap based on your current capacity gaps."
+        actions={
+          <Link
+            href="/trainee/dashboard"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to dashboard
+          </Link>
+        }
+      />
+      <form action={refreshDevelopmentPlan}>
+        <Button type="submit" variant="outline">
+          Re-evaluate Plan
+        </Button>
+      </form>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>{plan.title}</CardTitle>
+              <CardDescription>
+                Started {formatDate(plan.startDate)} · Target{" "}
+                {formatDate(plan.targetDate)}
+              </CardDescription>
+            </div>
+            <StatusBadge status={plan.status} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-3">
+            <Progress value={progress} />
+            <span className="text-sm tabular-nums">{progress.toFixed(0)}%</span>
+          </div>
+        </CardContent>
+      </Card>
+      <Separator />
+      <div className="space-y-5">
+        {plan.items.map((item) => (
+          <PlanItem key={item.id} item={item} />
+        ))}
+      </div>
+    </div>
+  );
 }
 
-function Header() {
-    return (
-        <div>
-            <Link
-                href="/trainee/dashboard"
-                className="text-sm text-gray-500 hover:text-black"
-            >
-                Back to dashboard
-            </Link>
-            <h1 className="mt-2 text-3xl font-semibold">
-                Personalized Development Plan
-            </h1>
-            <p className="mt-2 text-gray-600">
-                A competency-driven learning roadmap based on your current capacity
-                gaps.
+function PlanItem({ item }: { item: ActiveDevelopmentPlan["items"][number] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Step {item.sequenceOrder}
             </p>
+            <CardTitle className="mt-1">{item.competencyName}</CardTitle>
+          </div>
+          <StatusBadge status={item.status} />
         </div>
-    );
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Detail label="Original Current" value={item.currentScore} />
+          <Detail
+            label="Latest Current"
+            value={item.latestCurrentScore ?? item.currentScore}
+          />
+          <Detail label="Target" value={item.targetScore} />
+          <Detail label="Original Gap" value={item.gapScore} />
+          <Detail
+            label="Latest Gap"
+            value={item.latestGapScore ?? item.gapScore}
+          />
+          <Detail
+            label="Original Priority"
+            value={<StatusBadge status={item.priority} />}
+          />
+          <Detail
+            label="Latest Priority"
+            value={
+              item.latestPriority ? (
+                <StatusBadge status={item.latestPriority} />
+              ) : (
+                "—"
+              )
+            }
+          />
+          <Detail
+            label="Last Evaluated"
+            value={formatDate(item.lastEvaluatedAt)}
+          />
+        </div>
+        <div className="grid gap-3 text-sm md:grid-cols-2">
+          <Detail
+            label="Recommended Course"
+            value={
+              item.recommendedCourseSlug ? (
+                <Link
+                  className="text-primary hover:underline"
+                  href={`/trainee/courses/${item.recommendedCourseSlug}`}
+                >
+                  {item.recommendedCourseTitle}
+                </Link>
+              ) : (
+                "None"
+              )
+            }
+          />
+          <Detail
+            label="Recommended Trainer"
+            value={item.recommendedTrainerName ?? "None"}
+          />
+        </div>
+        {item.rationale && (
+          <p className="text-sm text-muted-foreground">{item.rationale}</p>
+        )}
+        {item.status === "pending" && (
+          <StatusForm
+            itemId={item.id}
+            statuses={["in_progress", "skipped"]}
+            labels={["Start", "Skip"]}
+          />
+        )}
+        {item.status === "in_progress" && (
+          <StatusForm
+            itemId={item.id}
+            statuses={["completed", "skipped"]}
+            labels={["Complete", "Skip"]}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
 }
-
-function PriorityBadge({ priority }: { priority: string }) {
-    return (
-        <span className="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium">
-            {priority}
-        </span>
-    );
+function Detail({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <div className="mt-1 font-medium">{value}</div>
+    </div>
+  );
 }
-
+function StatusForm({
+  itemId,
+  statuses,
+  labels,
+}: {
+  itemId: string;
+  statuses: string[];
+  labels: string[];
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {statuses.map((status, index) => (
+        <form key={status} action={updateDevelopmentPlanItemStatus}>
+          <input type="hidden" name="itemId" value={itemId} />
+          <input type="hidden" name="status" value={status} />
+          <Button
+            type="submit"
+            variant={status === "skipped" ? "outline" : "default"}
+          >
+            {labels[index]}
+          </Button>
+        </form>
+      ))}
+    </div>
+  );
+}
 function formatDate(value: string | null) {
-    if (!value) return "Not set";
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleDateString();
+  if (!value) return "Not set";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleDateString();
 }

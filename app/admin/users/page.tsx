@@ -1,8 +1,41 @@
 import Link from "next/link";
 
-import { requireRole } from "@/lib/auth/require-role";
+import { PageHeader } from "@/components/layout/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getAdminUsers } from "@/lib/admin/get-users";
-import { approveUser, deactivateUser, reactivateUser, setUserRole } from "./actions";
+import { requireRole } from "@/lib/auth/require-role";
+import {
+  approveUser,
+  deactivateUser,
+  reactivateUser,
+  setUserRole,
+} from "./actions";
 
 export default async function AdminUsersPage() {
   const { user } = await requireRole("admin");
@@ -10,210 +43,205 @@ export default async function AdminUsersPage() {
   const users = await getAdminUsers();
 
   const totalUsers = users.length;
-  const pendingApproval = users.filter((user) => !user.isApproved).length;
-  const activeUsers = users.filter((user) => user.isActive).length;
-  const inactiveUsers = users.filter((user) => !user.isActive).length;
-
-  const formatDate = (value: string) => {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return "Unknown";
-    }
-
-    return date.toLocaleDateString();
-  };
+  const pendingApproval = users.filter((item) => !item.isApproved).length;
+  const activeTrainees = users.filter(
+    (item) => item.role === "trainee" && item.isActive,
+  ).length;
+  const activeTrainers = users.filter(
+    (item) => item.role === "trainer" && item.isActive,
+  ).length;
 
   return (
-    <main className="mx-auto max-w-7xl p-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="space-y-8">
+      <PageHeader
+        title="User Management"
+        description="Approve accounts, manage workforce roles, and control platform access."
+        actions={
           <Link
             href="/admin/dashboard"
-            className="text-sm text-gray-500 hover:text-black"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
           >
-            ← Back to dashboard
+            Back to dashboard
           </Link>
-          <h1 className="mt-2 text-3xl font-semibold">User Management</h1>
-        </div>
-      </div>
+        }
+      />
 
-      <section className="mb-8 grid gap-4 md:grid-cols-4">
+      {pendingApproval > 0 && (
+        <Alert>
+          <AlertTitle>
+            {pendingApproval} account{pendingApproval === 1 ? "" : "s"} waiting
+            for approval.
+          </AlertTitle>
+          <AlertDescription>
+            Review pending accounts below before granting platform access.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard label="Total Users" value={totalUsers} />
         <SummaryCard label="Pending Approval" value={pendingApproval} />
-        <SummaryCard label="Active Users" value={activeUsers} />
-        <SummaryCard label="Inactive Users" value={inactiveUsers} />
+        <SummaryCard label="Active Trainees" value={activeTrainees} />
+        <SummaryCard label="Active Trainers" value={activeTrainers} />
       </section>
 
-      {users.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center text-gray-500">
-          No users found.
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-700">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Role</th>
-                  <th className="px-4 py-3 font-medium">Designation</th>
-                  <th className="px-4 py-3 font-medium">Department</th>
-                  <th className="px-4 py-3 font-medium">Approval</th>
-                  <th className="px-4 py-3 font-medium">Active</th>
-                  <th className="px-4 py-3 font-medium">Joined</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
+      <Separator />
 
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.userId} className="border-t align-top">
-                    <td className="px-4 py-4">{user.fullName}</td>
-                    <td className="px-4 py-4">{user.email}</td>
-                    <td className="px-4 py-4 capitalize">{user.role}</td>
-                    <td className="px-4 py-4">{user.designation ?? "—"}</td>
-                    <td className="px-4 py-4">{user.department ?? "—"}</td>
-                    <td className="px-4 py-4">
-                      <StatusBadge
-                        active={user.isApproved}
-                        trueLabel="Approved"
-                        falseLabel="Pending"
-                      />
-                    </td>
-                    <td className="px-4 py-4">
-                      <StatusBadge
-                        active={user.isActive}
-                        trueLabel="Active"
-                        falseLabel="Inactive"
-                      />
-                    </td>
-                    <td className="px-4 py-4">{formatDate(user.createdAt)}</td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        {!user.isApproved && (
-                          <form action={approveUser}>
-                            <input
-                              type="hidden"
-                              name="userId"
-                              value={user.userId}
-                            />
-                            <button
-                              type="submit"
-                              className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"
-                            >
-                              Approve
-                            </button>
-                          </form>
-                        )}
-
-                        {user.isApproved &&
-                          user.isActive &&
-                          user.userId !== currentUserId && (
-                            <form action={deactivateUser}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Platform Users</CardTitle>
+          <CardDescription>
+            Review account access, approval state, and workforce role
+            assignments.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {users.length === 0 ? (
+            <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+              No users found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted/40">
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Approval</TableHead>
+                    <TableHead>Account Status</TableHead>
+                    <TableHead className="min-w-80">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users.map((item) => (
+                    <TableRow key={item.userId} className="align-top">
+                      <TableCell className="whitespace-nowrap font-medium">
+                        {item.fullName}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">
+                        {item.email}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize">
+                          {item.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{item.department ?? "—"}</TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          status={item.isApproved ? "Approved" : "Pending"}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          status={item.isActive ? "Active" : "Inactive"}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {!item.isApproved && (
+                            <form action={approveUser}>
                               <input
                                 type="hidden"
                                 name="userId"
-                                value={user.userId}
+                                value={item.userId}
                               />
-                              <button
-                                type="submit"
-                                className="rounded-md bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-700"
-                              >
-                                Deactivate
-                              </button>
+                              <Button type="submit" size="sm">
+                                Approve
+                              </Button>
                             </form>
                           )}
 
-                        {user.isApproved && !user.isActive && (
-                          <form action={reactivateUser}>
-                            <input
-                              type="hidden"
-                              name="userId"
-                              value={user.userId}
-                            />
-                            <button
-                              type="submit"
-                              className="rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700"
+                          {item.isApproved &&
+                            item.isActive &&
+                            item.userId !== currentUserId && (
+                              <form action={deactivateUser}>
+                                <input
+                                  type="hidden"
+                                  name="userId"
+                                  value={item.userId}
+                                />
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  Deactivate
+                                </Button>
+                              </form>
+                            )}
+
+                          {item.isApproved && !item.isActive && (
+                            <form action={reactivateUser}>
+                              <input
+                                type="hidden"
+                                name="userId"
+                                value={item.userId}
+                              />
+                              <Button
+                                type="submit"
+                                size="sm"
+                                variant="secondary"
+                              >
+                                Reactivate
+                              </Button>
+                            </form>
+                          )}
+
+                          {item.role !== "admin" && (
+                            <form
+                              action={setUserRole}
+                              className="flex items-center gap-2"
                             >
-                              Reactivate
-                            </button>
-                          </form>
-                        )}
-                         {user.role !== "admin" && (
-    <form
-      action={setUserRole}
-      className="flex items-center gap-2"
-    >
-      <input
-        type="hidden"
-        name="userId"
-        value={user.userId}
-      />
-
-      <select
-        name="newRole"
-        defaultValue={user.role}
-        className="rounded-md border px-2 py-1 text-sm"
-      >
-        <option value="trainee">
-          Trainee
-        </option>
-
-        <option value="trainer">
-          Trainer
-        </option>
-      </select>
-
-      <button
-        type="submit"
-        className="rounded-md border px-3 py-1 text-sm"
-      >
-        Change Role
-      </button>
-    </form>
-  )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </main>
+                              <input
+                                type="hidden"
+                                name="userId"
+                                value={item.userId}
+                              />
+                              <Select name="newRole" defaultValue={item.role}>
+                                <SelectTrigger
+                                  size="sm"
+                                  aria-label={`Role for ${item.fullName}`}
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="trainee">
+                                    Trainee
+                                  </SelectItem>
+                                  <SelectItem value="trainer">
+                                    Trainer
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button type="submit" size="sm" variant="outline">
+                                Change Role
+                              </Button>
+                            </form>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border bg-white p-5 shadow-sm">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold">{value}</p>
-    </div>
-  );
-}
-
-function StatusBadge({
-  active,
-  trueLabel,
-  falseLabel,
-}: {
-  active: boolean;
-  trueLabel: string;
-  falseLabel: string;
-}) {
-  return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium ${
-        active
-          ? "border-emerald-200 bg-emerald-100 text-emerald-800"
-          : "border-amber-200 bg-amber-100 text-amber-800"
-      }`}
-    >
-      {active ? trueLabel : falseLabel}
-    </span>
+    <Card size="sm">
+      <CardContent className="p-5">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
+      </CardContent>
+    </Card>
   );
 }

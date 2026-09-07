@@ -1,108 +1,102 @@
 import Link from "next/link";
+import { PageHeader } from "@/components/layout/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function TraineeCompetenciesPage() {
   const { user } = await requireRole("trainee");
-
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("user_competencies")
-    .select(`
-      current_score,
-      target_score,
-      competencies (
-        name,
-        category
-      )
-    `)
+    .select("current_score, target_score, competencies (name, category)")
     .eq("user_id", user.id)
     .order("current_score", { ascending: true });
-
-  if (error) {
+  if (error)
     return (
-      <main className="p-8">
-        <h1 className="text-2xl font-semibold">My Competencies</h1>
-
-        <p className="mt-4">
-          Unable to load competency information.
-        </p>
-      </main>
+      <Alert variant="destructive">
+        <AlertTitle>Unable to load competency information.</AlertTitle>
+      </Alert>
     );
-  }
-
   return (
-    <main className="p-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            My Competencies
-          </h1>
-
-          <p className="mt-2 text-gray-600">
-            Your current competency profile and development targets.
-          </p>
+    <div className="space-y-8">
+      <PageHeader
+        title="Competency Gaps"
+        description="Compare current competency levels against target capability requirements."
+        actions={
+          <Link
+            href="/trainee/recommendations"
+            className={buttonVariants({ size: "sm" })}
+          >
+            View Recommended Learning
+          </Link>
+        }
+      />
+      {!data?.length ? (
+        <Alert>
+          <AlertTitle>No competency data available</AlertTitle>
+          <AlertDescription>
+            Your competency profile and development targets will appear here
+            when available.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2">
+          {data.map((item, index) => {
+            const competency = Array.isArray(item.competencies)
+              ? item.competencies[0]
+              : item.competencies;
+            const current = Number(item.current_score);
+            const target = Number(item.target_score);
+            const gap = Math.max(target - current, 0);
+            return (
+              <Card key={`${competency?.name ?? "competency"}-${index}`}>
+                <CardHeader>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <CardTitle>{competency?.name ?? "Competency"}</CardTitle>
+                      <CardDescription>
+                        {competency?.category ?? "Uncategorized"}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <Metric label="Current" value={current} />
+                    <Metric label="Target" value={target} />
+                    <Metric label="Gap" value={gap} />
+                  </div>
+                  <div>
+                    <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+                      <span>Current level</span>
+                      <span>{current}% of scale</span>
+                    </div>
+                    <Progress value={Math.min(Math.max(current, 0), 100)} />
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
-
-        <Link
-          href="/trainee/recommendations"
-          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          View Recommended Learning →
-        </Link>
-      </div>
-
-      <div className="mt-8 space-y-4">
-        {data?.map((item) => {
-          const competency = Array.isArray(item.competencies)
-            ? item.competencies[0]
-            : item.competencies;
-
-          const current = Number(item.current_score);
-          const target = Number(item.target_score);
-
-          const gap = Math.max(target - current, 0);
-
-          return (
-            <div
-              key={competency?.name}
-              className="rounded-lg border p-5"
-            >
-              <h2 className="font-semibold">
-                {competency?.name}
-              </h2>
-
-              <p className="mt-1 text-sm text-gray-500">
-                {competency?.category}
-              </p>
-
-              <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                <p>
-                  Current: <strong>{current}</strong>
-                </p>
-
-                <p>
-                  Target: <strong>{target}</strong>
-                </p>
-
-                <p>
-                  Gap: <strong>{gap}</strong>
-                </p>
-              </div>
-
-              <div className="mt-4 h-2 overflow-hidden rounded bg-gray-200">
-                <div
-                  className="h-full bg-black"
-                  style={{
-                    width: `${Math.min(current, 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </main>
+      )}
+    </div>
+  );
+}
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 font-semibold tabular-nums">{value.toFixed(1)}</p>
+    </div>
   );
 }

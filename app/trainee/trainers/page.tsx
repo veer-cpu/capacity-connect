@@ -1,211 +1,173 @@
 import Link from "next/link";
 
+import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getTrainerRecommendations } from "@/lib/competency/get-trainer-recommendations";
 
 export default async function TrainerRecommendationsPage() {
   const { activeGaps, recommendations } = await getTrainerRecommendations();
-
   return (
-    <main className="mx-auto max-w-6xl p-8">
-      <div>
-        <p className="text-sm font-medium text-gray-500">
-          Capacity Connect Intelligence
-        </p>
-
-        <h1 className="mt-2 text-3xl font-semibold">Recommended Trainers</h1>
-
-        <p className="mt-3 max-w-3xl text-gray-600">
-          Trainer recommendations are calculated from your active competency
-          gaps using verified expertise, experience, course alignment, and
-          availability.
-        </p>
-      </div>
-
+    <div className="space-y-8">
+      <PageHeader
+        title="Recommended Trainers"
+        description="Trainer recommendations are calculated from your active competency gaps using verified expertise, experience, course alignment, and availability."
+        actions={
+          <Link
+            href="/trainee/dashboard"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to dashboard
+          </Link>
+        }
+      />
       {activeGaps.length > 0 && (
-        <section className="mt-8">
+        <section>
           <h2 className="text-lg font-semibold">
             Your Active Development Areas
           </h2>
-
           <div className="mt-3 flex flex-wrap gap-2">
             {activeGaps.map((gap) => (
-              <span
-                key={gap.competencyId}
-                className="rounded-full border px-3 py-1 text-sm"
-              >
+              <Badge key={gap.competencyId} variant="secondary">
                 {gap.competencyName}: {gap.gapScore.toFixed(1)} pt gap
-              </span>
+              </Badge>
             ))}
           </div>
         </section>
       )}
-
       {activeGaps.length === 0 && (
-        <section className="mt-10 rounded-xl border p-6">
-          <h2 className="text-xl font-semibold">
-            No trainer matching required
-          </h2>
-
-          <p className="mt-2 text-gray-600">
-            All current competency targets are met. There are no active
-            competency gaps requiring trainer support right now.
-          </p>
-
-          <Link
-            href="/trainee/competencies"
-            className="mt-5 inline-block rounded-md border px-4 py-2"
-          >
-            View My Competencies
-          </Link>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle>No trainer matching required</CardTitle>
+            <CardDescription>
+              All current competency targets are met. There are no active
+              competency gaps requiring trainer support right now.
+            </CardDescription>
+            <Link
+              href="/trainee/competencies"
+              className={`${buttonVariants({ variant: "outline", size: "sm" })} mt-4`}
+            >
+              View My Competencies
+            </Link>
+          </CardHeader>
+        </Card>
       )}
-
       {activeGaps.length > 0 && recommendations.length === 0 && (
-        <section className="mt-10 rounded-xl border p-6">
-          <h2 className="text-xl font-semibold">No matching trainers found</h2>
-
-          <p className="mt-2 text-gray-600">
-            No currently available, approved trainer has a verified competency
-            match for your active development areas.
-          </p>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle>No matching trainers found</CardTitle>
+            <CardDescription>
+              No currently available, approved trainer has a verified competency
+              match for your active development areas.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       )}
-
       {recommendations.length > 0 && (
-        <section className="mt-10">
+        <section className="space-y-5">
           <h2 className="text-xl font-semibold">Best Matches</h2>
-
-          <div className="mt-5 space-y-6">
-            {recommendations.map((recommendation, index) => {
-              const { trainer, matchScore, primaryDriver } = recommendation;
-
-              return (
-                <article key={trainer.userId} className="rounded-xl border p-6">
-                  <div className="flex flex-col justify-between gap-4 md:flex-row">
+          {recommendations.map((recommendation, index) => {
+            const { trainer, matchScore, primaryDriver } = recommendation;
+            return (
+              <Card key={trainer.userId}>
+                <CardHeader>
+                  <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-3">
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           #{index + 1}
                         </span>
-
-                        <span className="rounded-full border px-3 py-1 text-sm font-medium">
+                        <Badge variant="outline">
                           {matchScore.toFixed(1)}% Match
-                        </span>
+                        </Badge>
                       </div>
-
-                      <h3 className="mt-4 text-2xl font-semibold">
-                        {trainer.fullName}
-                      </h3>
-
+                      <CardTitle className="mt-4">{trainer.fullName}</CardTitle>
                       {trainer.designation && (
-                        <p className="mt-1 text-gray-600">
-                          {trainer.designation}
-                        </p>
+                        <CardDescription>{trainer.designation}</CardDescription>
                       )}
-
                       {trainer.department && (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           {trainer.department}
                         </p>
                       )}
                     </div>
-
-                    <div className="rounded-lg bg-gray-50 px-4 py-3">
-                      <p className="text-sm text-gray-500">Primary Match</p>
-
+                    <div className="rounded-lg bg-muted/50 px-4 py-3">
+                      <p className="text-sm text-muted-foreground">
+                        Primary Match
+                      </p>
                       <p className="mt-1 font-semibold">
                         {primaryDriver.competencyName}
                       </p>
-
-                      <p className="mt-1 text-sm text-gray-600">
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Your gap: {primaryDriver.gapScore.toFixed(1)} pts
                       </p>
                     </div>
                   </div>
-
-                  <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-                    <Metric
-                      label="Verified Expertise"
-                      value={`${primaryDriver.expertiseScore.toFixed(0)}/100`}
-                    />
-
-                    <Metric
-                      label="Experience Score"
-                      value={`${primaryDriver.experienceScore.toFixed(0)}/100`}
-                    />
-
-                    <Metric
-                      label="Course Alignment"
-                      value={`${primaryDriver.relevanceScore.toFixed(0)}/100`}
-                    />
-
-                    <Metric
-                      label="Availability"
-                      value={`${primaryDriver.availabilityScore.toFixed(
-                        0,
-                      )}/100`}
-                    />
-
-                    <Metric
-                      label="Training Performance"
-                      value={`${primaryDriver.performanceScore.toFixed(1)}/100`}
-                    />
-
-                    <Metric
-                      label="Learner Feedback"
-                      value={`${primaryDriver.feedbackScore.toFixed(1)}/100`}
-                    />
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      ["Verified Expertise", primaryDriver.expertiseScore],
+                      ["Experience Score", primaryDriver.experienceScore],
+                      ["Course Alignment", primaryDriver.relevanceScore],
+                      ["Availability", primaryDriver.availabilityScore],
+                      ["Training Performance", primaryDriver.performanceScore],
+                      ["Learner Feedback", primaryDriver.feedbackScore],
+                    ].map(([label, value]) => (
+                      <Metric
+                        key={String(label)}
+                        label={String(label)}
+                        value={`${Number(value).toFixed(1)}/100`}
+                      />
+                    ))}
                   </div>
-
-                  <div className="mt-6 rounded-lg bg-gray-50 p-4">
+                  <div className="mt-6 rounded-lg bg-muted/50 p-4">
                     <p className="text-sm font-medium">Why this trainer?</p>
-
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-muted-foreground">
                       {primaryDriver.explanation}
                     </p>
                   </div>
-
                   {trainer.trainerBio && (
-                    <div className="mt-5">
-                      <p className="text-sm font-medium">Trainer Profile</p>
-
-                      <p className="mt-2 text-sm text-gray-600">
-                        {trainer.trainerBio}
-                      </p>
-                    </div>
+                    <p className="mt-5 text-sm text-muted-foreground">
+                      {trainer.trainerBio}
+                    </p>
                   )}
-                </article>
-              );
-            })}
-          </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </section>
       )}
-
-      <div className="mt-10 flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3">
         <Link
           href="/trainee/recommendations"
-          className="rounded-md bg-black px-4 py-2 text-white"
+          className={buttonVariants({ size: "sm" })}
         >
           View Recommended Courses
         </Link>
-
         <Link
           href="/trainee/competencies"
-          className="rounded-md border px-4 py-2"
+          className={buttonVariants({ variant: "outline", size: "sm" })}
         >
           View My Competencies
         </Link>
       </div>
-    </main>
+    </div>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border p-4">
-      <p className="text-sm text-gray-500">{label}</p>
-
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+    <div className="rounded-lg border p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 font-medium tabular-nums">{value}</p>
     </div>
   );
 }

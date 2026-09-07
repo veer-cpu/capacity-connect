@@ -1,7 +1,18 @@
 import Link from "next/link";
-
-import { requireRole } from "@/lib/auth/require-role";
+import { PageHeader } from "@/components/layout/page-header";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { getMyCertificates } from "@/lib/certificates/get-certificates";
+import { requireRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { issueCertificate } from "./actions";
 
@@ -22,98 +33,122 @@ export default async function TraineeCertificatesPage() {
     getMyCertificates(),
     getEligibleEnrollments(user.id),
   ]);
-
   const issuedCourseIds = new Set(
     certificates.map((certificate) => certificate.courseId),
   );
-  const eligibleEnrollments = enrollments.filter(
+  const eligible = enrollments.filter(
     (enrollment) => !issuedCourseIds.has(enrollment.course_id),
   );
-
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold">Certificates</h1>
-        <p className="mt-2 text-gray-600">
-          Certificates earned from completed CAPACITY CONNECT courses.
-        </p>
-      </div>
-
-      {certificates.length === 0 && eligibleEnrollments.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center text-gray-500">
-          No certificates are available yet.
-        </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Certificates"
+        description="View and verify credentials earned through completed training."
+        actions={
+          <Link
+            href="/trainee/dashboard"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to dashboard
+          </Link>
+        }
+      />
+      {certificates.length === 0 && eligible.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            No certificates are available yet.
+          </CardContent>
+        </Card>
       ) : (
         <>
-          {certificates.length > 0 && (
-            <section>
-              <h2 className="mb-4 text-2xl font-semibold">
-                Issued Certificates
-              </h2>
-              <div className="space-y-4">
-                {certificates.map((certificate) => (
-                  <article
-                    key={certificate.id}
-                    className="rounded-xl border bg-white p-5 shadow-sm"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          {certificate.courseTitle}
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-600">
-                          Certificate {certificate.certificateNumber}
+          <Card>
+            <CardHeader>
+              <CardTitle>Issued Certificates</CardTitle>
+              <CardDescription>
+                Credentials earned through completed CAPACITY CONNECT courses.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {certificates.length === 0 ? (
+                <p className="py-6 text-sm text-muted-foreground">
+                  No issued certificates yet.
+                </p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {certificates.map((certificate) => (
+                    <Card key={certificate.id} size="sm">
+                      <CardContent className="space-y-4 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="font-semibold">
+                              {certificate.courseTitle}
+                            </h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Certificate {certificate.certificateNumber}
+                            </p>
+                          </div>
+                          <StatusBadge
+                            status={certificate.revokedAt ? "Revoked" : "Valid"}
+                          />
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Issued {formatDate(certificate.issuedAt)}
                         </p>
-                      </div>
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-xs ${certificate.revokedAt ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
-                      >
-                        {certificate.revokedAt ? "Revoked" : "Valid"}
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-gray-600">
-                      Issued {formatDate(certificate.issuedAt)}
-                    </p>
-                    <Link
-                      href={`/verify/${certificate.verificationCode}`}
-                      className="mt-4 inline-flex rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
-                    >
-                      Verify Certificate
-                    </Link>
-                    {!certificate.revokedAt && (
-                      <Link
-                        href={`/trainee/certificates/${certificate.id}/download`}
-                        className="ml-2 mt-4 inline-flex rounded-md bg-black px-3 py-2 text-sm text-white hover:bg-gray-800"
-                      >
-                        Download PDF
-                      </Link>
-                    )}
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {eligibleEnrollments.length > 0 && (
-            <section className="mt-10">
-              <h2 className="mb-4 text-2xl font-semibold">
-                Eligible Completed Courses
-              </h2>
-              <div className="space-y-4">
-                {eligibleEnrollments.map((enrollment) => {
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/verify/${certificate.verificationCode}`}
+                            className={buttonVariants({
+                              variant: "outline",
+                              size: "sm",
+                            })}
+                          >
+                            Verify Certificate
+                          </Link>
+                          {!certificate.revokedAt && (
+                            <Link
+                              href={`/trainee/certificates/${certificate.id}/download`}
+                              className={buttonVariants({ size: "sm" })}
+                            >
+                              Download PDF
+                            </Link>
+                          )}
+                        </div>
+                        {certificate.revokedAt && (
+                          <Badge variant="destructive">
+                            Revoked credential
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          <Separator />
+          {eligible.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Eligible Completed Courses</CardTitle>
+                <CardDescription>
+                  Issue a certificate for a completed course when needed.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {eligible.map((enrollment) => {
                   const course = Array.isArray(enrollment.courses)
                     ? enrollment.courses[0]
                     : enrollment.courses;
                   return (
-                    <article
+                    <div
                       key={enrollment.id}
-                      className="flex flex-wrap items-center justify-between gap-4 rounded-xl border p-5"
+                      className="flex flex-wrap items-center justify-between gap-4 rounded-lg border p-4"
                     >
                       <div>
-                        <h3 className="font-semibold">
+                        <p className="font-medium">
                           {course?.title ?? "Completed course"}
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-600">
+                        </p>
+                        <p className="text-sm text-muted-foreground">
                           Progress: 100%
                         </p>
                       </div>
@@ -123,22 +158,17 @@ export default async function TraineeCertificatesPage() {
                           name="enrollmentId"
                           value={enrollment.id}
                         />
-                        <button
-                          type="submit"
-                          className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
-                        >
-                          Issue Certificate
-                        </button>
+                        <Button type="submit">Issue Certificate</Button>
                       </form>
-                    </article>
+                    </div>
                   );
                 })}
-              </div>
-            </section>
+              </CardContent>
+            </Card>
           )}
         </>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -153,20 +183,9 @@ async function getEligibleEnrollments(
     .eq("status", "completed")
     .eq("progress_percentage", 100)
     .order("updated_at", { ascending: false });
-
-  if (error) {
-    console.error("Unable to load eligible certificate courses:", {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-    });
-    throw new Error("Unable to load eligible completed courses.");
-  }
-
+  if (error) throw new Error("Unable to load eligible completed courses.");
   return (data ?? []) as EnrollmentWithCourse[];
 }
-
 function formatDate(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleDateString();

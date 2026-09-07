@@ -1,108 +1,110 @@
 import Link from "next/link";
 
-import { requireRole } from "@/lib/auth/require-role";
+import { PageHeader } from "@/components/layout/page-header";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getStaffDevelopmentPlans } from "@/lib/development-plan/get-staff-plans";
+import { requireRole } from "@/lib/auth/require-role";
 
 export default async function TrainerDevelopmentPlansPage() {
   await requireRole("trainer");
   const plans = await getStaffDevelopmentPlans();
 
   return (
-    <main className="mx-auto max-w-7xl p-8">
-      <Header
+    <div className="space-y-8">
+      <PageHeader
         title="Trainee Development Plans"
-        subtitle="Monitor competency-development roadmaps for trainees in your courses."
-        backHref="/trainer/dashboard"
+        description="Monitor competency-development roadmaps for trainees in your courses."
+        actions={
+          <Link
+            href="/trainer/dashboard"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to dashboard
+          </Link>
+        }
       />
-      <PlansTable plans={plans} detailBase="/trainer/development-plans" />
-    </main>
-  );
-}
-
-function PlansTable({
-  plans,
-  detailBase,
-}: {
-  plans: Awaited<ReturnType<typeof getStaffDevelopmentPlans>>;
-  detailBase: string;
-}) {
-  if (plans.length === 0) {
-    return <EmptyState />;
-  }
-
-  return (
-    <div className="mt-8 overflow-hidden rounded-xl border bg-white shadow-sm">
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-700">
-            <tr>
-              <th className="px-4 py-3">Trainee</th>
-              <th className="px-4 py-3">Department</th>
-              <th className="px-4 py-3">Plan</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Progress</th>
-              <th className="px-4 py-3">Target Date</th>
-              <th className="px-4 py-3">View Plan</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plans.map((plan) => (
-              <tr key={plan.planId} className="border-t">
-                <td className="px-4 py-4 font-medium">
-                  {plan.traineeName ?? "Unnamed trainee"}
-                </td>
-                <td className="px-4 py-4">{plan.department ?? "—"}</td>
-                <td className="px-4 py-4">{plan.planTitle}</td>
-                <td className="px-4 py-4">
-                  <span className="rounded-full border px-2.5 py-1 text-xs">
-                    {plan.planStatus}
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  {plan.progressPercentage.toFixed(0)}%
-                </td>
-                <td className="px-4 py-4">{formatDate(plan.targetDate)}</td>
-                <td className="px-4 py-4">
-                  <Link
-                    className="rounded-md border px-3 py-2 text-xs hover:bg-gray-50"
-                    href={`${detailBase}/${plan.planId}`}
-                  >
-                    View Plan
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-function Header({
-  title,
-  subtitle,
-  backHref,
-}: {
-  title: string;
-  subtitle: string;
-  backHref: string;
-}) {
-  return (
-    <div>
-      <Link href={backHref} className="text-sm text-gray-500 hover:text-black">
-        Back to dashboard
-      </Link>
-      <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
-      <p className="mt-2 text-gray-600">{subtitle}</p>
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="mt-8 rounded-xl border border-dashed p-8 text-center text-gray-500">
-      No development plans are available.
+      {plans.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            No development plans are available.
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Active and Historical Plans</CardTitle>
+            <CardDescription>
+              Review learner roadmaps and current completion progress.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-muted/40">
+                <TableRow>
+                  <TableHead>Trainee</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Target Date</TableHead>
+                  <TableHead>Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {plans.map((plan) => (
+                  <TableRow key={plan.planId}>
+                    <TableCell className="font-medium">
+                      {plan.traineeName ?? "Unnamed trainee"}
+                    </TableCell>
+                    <TableCell>{plan.department ?? "—"}</TableCell>
+                    <TableCell>{plan.planTitle}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={plan.planStatus} />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex min-w-28 items-center gap-2">
+                        <Progress value={plan.progressPercentage} />
+                        <span className="text-xs tabular-nums text-muted-foreground">
+                          {plan.progressPercentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatDate(plan.targetDate)}</TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/trainer/development-plans/${plan.planId}`}
+                        className={buttonVariants({
+                          variant: "outline",
+                          size: "sm",
+                        })}
+                      >
+                        View Plan
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -8,40 +8,31 @@ const statusStyles: Record<
 > = {
   active: {
     variant: "default",
-    className: "border-emerald-200 bg-emerald-100 text-emerald-800",
   },
+  approved: { variant: "default" },
+  valid: { variant: "default" },
   completed: {
     variant: "default",
-    className: "border-emerald-200 bg-emerald-100 text-emerald-800",
   },
   published: {
     variant: "default",
-    className: "border-emerald-200 bg-emerald-100 text-emerald-800",
   },
   verified: {
     variant: "default",
-    className: "border-emerald-200 bg-emerald-100 text-emerald-800",
   },
   draft: { variant: "secondary" },
-  pending: {
-    variant: "secondary",
-    className: "border-amber-200 bg-amber-100 text-amber-800",
-  },
-  in_progress: {
-    variant: "secondary",
-    className: "border-sky-200 bg-sky-100 text-sky-800",
-  },
-  improving: {
-    variant: "secondary",
-    className: "border-sky-200 bg-sky-100 text-sky-800",
-  },
-  high: {
-    variant: "secondary",
-    className: "border-amber-200 bg-amber-100 text-amber-800",
-  },
+  pending: { variant: "secondary" },
+  in_progress: { variant: "secondary" },
+  improving: { variant: "secondary" },
+  high: { variant: "secondary" },
+  medium: { variant: "secondary" },
+  low: { variant: "secondary" },
+  anonymous: { variant: "secondary" },
+  needs_attention: { variant: "secondary" },
   critical: { variant: "destructive" },
   urgent: { variant: "destructive" },
   revoked: { variant: "destructive" },
+  "deadline passed": { variant: "destructive" },
   closed: { variant: "secondary" },
   archived: { variant: "secondary" },
   inactive: { variant: "secondary" },

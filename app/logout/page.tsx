@@ -11,7 +11,13 @@ export default function LogoutPage() {
     async function logout() {
       const supabase = createClient();
 
-      await supabase.auth.signOut();
+const { error } = await supabase.auth.signOut({
+  scope: "local",
+})
+
+if (error) {
+  console.error("Sign out failed:", error)
+}
 
       router.replace("/login");
       router.refresh();

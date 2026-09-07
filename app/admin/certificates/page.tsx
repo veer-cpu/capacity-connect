@@ -1,5 +1,26 @@
 import Link from "next/link";
 
+import { PageHeader } from "@/components/layout/page-header";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
   getAdminCertificates,
   type AdminCertificate,
@@ -12,100 +33,122 @@ export default async function AdminCertificatesPage() {
   const certificates = await getAdminCertificates();
 
   return (
-    <main className="mx-auto max-w-7xl p-8">
-      <div className="mb-8">
-        <Link
-          href="/admin/dashboard"
-          className="text-sm text-gray-500 hover:text-black"
-        >
-          Back to dashboard
-        </Link>
-        <h1 className="mt-2 text-3xl font-semibold">Certificate Management</h1>
-        <p className="mt-2 text-gray-600">
-          Review and revoke certificates issued through CAPACITY CONNECT.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Certificate Management"
+        description="Review issued credentials and revoke certificates when necessary."
+        actions={
+          <Link
+            href="/admin/dashboard"
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            Back to dashboard
+          </Link>
+        }
+      />
+
+      <Alert>
+        <AlertTitle>Credential integrity</AlertTitle>
+        <AlertDescription>
+          Revoking a certificate invalidates public verification and blocks
+          future PDF downloads.
+        </AlertDescription>
+      </Alert>
+
+      <Separator />
 
       {certificates.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center text-gray-500">
-          No certificates have been issued yet.
-        </div>
+        <Card>
+          <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            No certificates have been issued yet.
+          </CardContent>
+        </Card>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-700">
-                <tr>
-                  <th className="px-4 py-3">Certificate Number</th>
-                  <th className="px-4 py-3">Learner</th>
-                  <th className="px-4 py-3">Course</th>
-                  <th className="px-4 py-3">Issued</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
+        <Card>
+          <CardHeader>
+            <CardTitle>Issued Certificates</CardTitle>
+            <CardDescription>
+              Review credential validity and record revocation reasons when
+              required.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-muted/40">
+                <TableRow>
+                  <TableHead>Certificate Number</TableHead>
+                  <TableHead>Learner</TableHead>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Issued</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="min-w-72">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {certificates.map((certificate) => (
                   <CertificateRow
                     key={certificate.id}
                     certificate={certificate}
                   />
                 ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
-    </main>
+    </div>
   );
 }
 
 function CertificateRow({ certificate }: { certificate: AdminCertificate }) {
   return (
-    <tr className="border-t align-top">
-      <td className="px-4 py-4 font-medium">{certificate.certificateNumber}</td>
-      <td className="px-4 py-4">
-        {certificate.traineeName ?? "Unnamed learner"}
-      </td>
-      <td className="px-4 py-4">{certificate.courseTitle}</td>
-      <td className="px-4 py-4">{formatDate(certificate.issuedAt)}</td>
-      <td className="px-4 py-4">
-        <span
-          className={`rounded-full border px-2.5 py-1 text-xs ${certificate.revokedAt ? "border-red-200 bg-red-50 text-red-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
-        >
-          {certificate.revokedAt ? "Revoked" : "Valid"}
-        </span>
-      </td>
-      <td className="px-4 py-4">
+    <TableRow className="align-top">
+      <TableCell className="font-medium">
+        {certificate.certificateNumber}
+      </TableCell>
+      <TableCell>{certificate.traineeName ?? "Unnamed learner"}</TableCell>
+      <TableCell>{certificate.courseTitle}</TableCell>
+      <TableCell>{formatDate(certificate.issuedAt)}</TableCell>
+      <TableCell>
+        <StatusBadge status={certificate.revokedAt ? "Revoked" : "Valid"} />
+      </TableCell>
+      <TableCell>
         {certificate.revokedAt ? (
-          <p className="max-w-xs text-sm text-gray-600">
-            {certificate.revocationReason ?? "No reason provided."}
-          </p>
+          <div className="space-y-1 text-sm">
+            <p className="font-medium text-muted-foreground">
+              Revocation reason
+            </p>
+            <p className="max-w-xs whitespace-pre-wrap text-muted-foreground">
+              {certificate.revocationReason ?? "No reason provided."}
+            </p>
+          </div>
         ) : (
           <form
             action={revokeCertificate}
             className="flex min-w-64 flex-col gap-2"
           >
             <input type="hidden" name="certificateId" value={certificate.id} />
-            <textarea
+            <Textarea
               name="reason"
               minLength={3}
               maxLength={500}
               required
               rows={2}
               placeholder="Reason for revocation"
-              className="rounded-md border px-3 py-2 text-sm"
+              aria-label={`Revocation reason for ${certificate.certificateNumber}`}
             />
-            <button
+            <Button
               type="submit"
-              className="self-start rounded-md bg-red-600 px-3 py-2 text-xs font-medium text-white hover:bg-red-700"
+              variant="destructive"
+              size="sm"
+              className="self-start"
             >
               Revoke Certificate
-            </button>
+            </Button>
           </form>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
