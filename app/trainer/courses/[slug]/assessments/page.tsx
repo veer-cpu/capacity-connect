@@ -46,9 +46,7 @@ export default async function TrainerCourseAssessmentsPage({
           >
             ← Back to course
           </Link>
-          <h1 className="mt-2 text-3xl font-semibold">
-            Assessments
-          </h1>
+          <h1 className="mt-2 text-3xl font-semibold">Assessments</h1>
         </div>
       </div>
 
@@ -170,10 +168,12 @@ export default async function TrainerCourseAssessmentsPage({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">{assessment.title}</h3>
+                      <h3 className="text-lg font-semibold">
+                        {assessment.title}
+                      </h3>
                       <span
                         className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium capitalize ${statusBadgeClass(
-                          assessment.status
+                          assessment.status,
                         )}`}
                       >
                         {assessment.status}
@@ -186,14 +186,14 @@ export default async function TrainerCourseAssessmentsPage({
                     )}
                   </div>
 
-                  {assessment.status === "draft" && (
-                    <Link
-                      href={`/trainer/courses/${course.slug}/assessments/${assessment.id}`}
-                      className="rounded-md border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Edit Questions
-                    </Link>
-                  )}
+                  <Link
+                    href={`/trainer/courses/${course.slug}/assessments/${assessment.id}`}
+                    className="rounded-md border px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    {assessment.status === "draft"
+                      ? "Edit Questions"
+                      : "Manage Assessment"}
+                  </Link>
                 </div>
 
                 <div className="mt-4 grid gap-4 text-sm text-gray-700 sm:grid-cols-3">

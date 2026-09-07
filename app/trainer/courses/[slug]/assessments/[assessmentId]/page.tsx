@@ -4,10 +4,12 @@ import { getTrainerAssessmentEditor } from "@/lib/trainer/get-trainer-assessment
 
 import {
   addAssessmentQuestion,
+  closeAssessment,
   deleteAssessmentQuestion,
   publishAssessment,
+  reopenAssessment,
+  updateAssessmentDeadline,
 } from "./actions";
-import CoursePage from "@/app/courses/[slug]/page";
 
 type PageProps = {
   params: Promise<{
@@ -29,6 +31,10 @@ function statusBadgeClass(status: string) {
   }
 }
 
+function isDeadlineOpen(deadline: string | null) {
+  return !deadline || new Date(deadline).getTime() > Date.now();
+}
+
 export default async function TrainerAssessmentEditorPage({
   params,
 }: PageProps) {
@@ -39,32 +45,27 @@ export default async function TrainerAssessmentEditorPage({
   const assessmentDeadline = editor.assessment.deadline
     ? new Date(editor.assessment.deadline).toLocaleString()
     : "No deadline";
+  const canReopen =
+    editor.assessment.status === "closed" &&
+    isDeadlineOpen(editor.assessment.deadline);
 
   return (
     <main className="mx-auto max-w-5xl p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         {editor.assessment.status === "draft" && (
-  <form action={publishAssessment}>
-    <input
-      type="hidden"
-      name="assessmentId"
-      value={assessmentId}
-    />
+          <form action={publishAssessment}>
+            <input type="hidden" name="assessmentId" value={assessmentId} />
 
-    <input
-      type="hidden"
-      name="courseSlug"
-      value={slug}
-    />
+            <input type="hidden" name="courseSlug" value={slug} />
 
-    <button
-      type="submit"
-      className="rounded-md bg-black px-4 py-2 text-sm text-white"
-    >
-      Publish Assessment
-    </button>
-  </form>
-)}
+            <button
+              type="submit"
+              className="rounded-md bg-black px-4 py-2 text-sm text-white"
+            >
+              Publish Assessment
+            </button>
+          </form>
+        )}
         <div>
           <Link
             href={`/trainer/courses/${slug}/assessments`}
@@ -107,6 +108,66 @@ export default async function TrainerAssessmentEditorPage({
             <p className="mt-1 text-lg font-semibold">{editor.course.title}</p>
           </div>
         </div>
+
+        {editor.assessment.status !== "closed" && (
+          <form
+            action={updateAssessmentDeadline}
+            className="mt-6 flex flex-wrap items-end gap-3 border-t pt-5"
+          >
+            <input
+              type="hidden"
+              name="assessmentId"
+              value={editor.assessment.id}
+            />
+            <label className="text-sm">
+              <span className="mb-1 block font-medium">Edit deadline</span>
+              <input
+                type="datetime-local"
+                name="deadline"
+                defaultValue={toDateTimeLocalValue(editor.assessment.deadline)}
+                className="rounded-md border px-3 py-2"
+              />
+            </label>
+            <button
+              type="submit"
+              className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+            >
+              Save Deadline
+            </button>
+          </form>
+        )}
+
+        {editor.assessment.status === "published" && (
+          <form action={closeAssessment} className="mt-4">
+            <input
+              type="hidden"
+              name="assessmentId"
+              value={editor.assessment.id}
+            />
+            <button
+              type="submit"
+              className="rounded-md bg-slate-700 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Close Assessment
+            </button>
+          </form>
+        )}
+
+        {canReopen && (
+          <form action={reopenAssessment} className="mt-4">
+            <input
+              type="hidden"
+              name="assessmentId"
+              value={editor.assessment.id}
+            />
+            <button
+              type="submit"
+              className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+            >
+              Reopen Assessment
+            </button>
+          </form>
+        )}
       </section>
 
       {editor.assessment.status !== "draft" ? (
@@ -379,4 +440,20 @@ export default async function TrainerAssessmentEditorPage({
       </section>
     </main>
   );
+}
+
+function toDateTimeLocalValue(value: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }

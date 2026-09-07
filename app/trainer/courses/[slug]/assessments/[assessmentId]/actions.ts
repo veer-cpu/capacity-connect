@@ -20,6 +20,129 @@ const addAssessmentQuestionSchema = z.object({
     message: "Correct option must be 1, 2, 3, or 4.",
   }),
 });
+
+const assessmentIdSchema = z.object({
+  assessmentId: z.string().uuid(),
+});
+
+const deadlineSchema = assessmentIdSchema.extend({
+  deadline: z.preprocess(
+    (value) => (value === "" ? null : value),
+    z.union([
+      z.null(),
+      z.string().refine(
+        (value) => !Number.isNaN(new Date(value).getTime()),
+        "Deadline must be a valid date and time.",
+      ),
+    ]),
+  ),
+});
+
+function revalidateAssessmentPages() {
+  revalidatePath("/trainer/courses/[slug]/assessments", "page");
+  revalidatePath(
+    "/trainer/courses/[slug]/assessments/[assessmentId]",
+    "page",
+  );
+}
+
+async function runAssessmentLifecycleRpc(
+  rpcName: string,
+  assessmentId: string,
+  params: Record<string, unknown> = {},
+) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc(rpcName, {
+    p_assessment_id: assessmentId,
+    ...params,
+  });
+
+  if (error) {
+    console.error(`Unable to run ${rpcName}:`, {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(`Unable to update assessment: ${error.message}`);
+  }
+}
+
+async function requireDraftAssessment(assessmentId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("assessments")
+    .select("status")
+    .eq("id", assessmentId)
+    .maybeSingle();
+
+  if (error || !data || data.status !== "draft") {
+    throw new Error("Questions can only be changed while the assessment is a draft.");
+  }
+}
+
+export async function closeAssessment(formData: FormData): Promise<void> {
+  await requireRole("trainer");
+
+  const parsed = assessmentIdSchema.safeParse({
+    assessmentId: formData.get("assessmentId"),
+  });
+
+  if (!parsed.success) {
+    throw new Error("Invalid assessment closing request.");
+  }
+
+  await runAssessmentLifecycleRpc(
+    "close_trainer_assessment",
+    parsed.data.assessmentId,
+  );
+  revalidateAssessmentPages();
+}
+
+export async function reopenAssessment(formData: FormData): Promise<void> {
+  await requireRole("trainer");
+
+  const parsed = assessmentIdSchema.safeParse({
+    assessmentId: formData.get("assessmentId"),
+  });
+
+  if (!parsed.success) {
+    throw new Error("Invalid assessment reopening request.");
+  }
+
+  await runAssessmentLifecycleRpc(
+    "reopen_trainer_assessment",
+    parsed.data.assessmentId,
+  );
+  revalidateAssessmentPages();
+}
+
+export async function updateAssessmentDeadline(
+  formData: FormData,
+): Promise<void> {
+  await requireRole("trainer");
+
+  const parsed = deadlineSchema.safeParse({
+    assessmentId: formData.get("assessmentId"),
+    deadline: formData.get("deadline"),
+  });
+
+  if (!parsed.success) {
+    throw new Error("Invalid assessment deadline.");
+  }
+
+  await runAssessmentLifecycleRpc(
+    "update_trainer_assessment_deadline",
+    parsed.data.assessmentId,
+    {
+      p_deadline: parsed.data.deadline
+        ? new Date(parsed.data.deadline).toISOString()
+        : null,
+    },
+  );
+  revalidateAssessmentPages();
+}
+
 export async function publishAssessment(
   formData: FormData
 ): Promise<void> {
@@ -105,6 +228,7 @@ export async function addAssessmentQuestion(
   }
 
   const data = parsed.data;
+  await requireDraftAssessment(data.assessmentId);
 
   const optionEntries = [
     { key: "option1", value: data.option1 },
@@ -184,6 +308,8 @@ export async function deleteAssessmentQuestion(
       "Invalid question deletion request."
     );
   }
+
+  await requireDraftAssessment(assessmentIdResult.data);
 
   const supabase =
     await createClient();
