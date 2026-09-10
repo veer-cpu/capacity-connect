@@ -59,6 +59,7 @@ export default async function AdminKnowledgeHubPage({
             <TabsTrigger
               key={tab.value}
               value={tab.value}
+               nativeButton={false}
               render={
                 <Link href={`/admin/knowledge-hub?status=${tab.value}`} />
               }

@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
-
+import {
+  ProductFooter,
+} from "@/components/layout/product-footer";
 import { createClient } from "@/lib/supabase/server";
-
+import {
+  InstitutionBanner,
+} from "@/components/layout/institution-banner";
 import { AccountMenu } from "./account-menu";
 import { AppSidebar, type ShellRole } from "./app-sidebar";
 import { MobileNav } from "./mobile-nav";
@@ -58,11 +62,13 @@ export async function RoleShell({ role, children }: RoleShellProps) {
             fullName={profile?.full_name ?? null}
             email={user?.email}
           />
+          <InstitutionBanner />
           <main className="min-h-[calc(100vh-4rem)] flex-1">
             <div className="mx-auto w-full max-w-screen-2xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
               {children}
             </div>
           </main>
+          <ProductFooter />
         </div>
       </div>
     </div>

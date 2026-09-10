@@ -4,6 +4,7 @@ import {
   Award,
   Bell,
   BookOpen,
+  BadgeCheck,
   CircleAlert,
   Target,
   UserRound,
@@ -13,7 +14,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants,Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -219,7 +220,31 @@ export default async function TraineeDashboard() {
               )}
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BadgeCheck className="size-5" />
+                Competency Passport
+              </CardTitle>
+            </CardHeader>
 
+            <CardContent>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Review your consolidated capability record, competency levels
+                and supporting assessment and certification evidence.
+              </p>
+
+              <Button
+                className="mt-4"
+                variant="outline"
+                nativeButton={false}
+                render={<Link href="/trainee/passport" />}
+              >
+                View my passport
+                <ArrowRight className="size-4" />
+              </Button>
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle>My Learning</CardTitle>

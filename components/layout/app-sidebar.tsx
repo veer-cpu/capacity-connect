@@ -1,5 +1,5 @@
 "use client";
-import { Grid3X3,BadgeCheck } from "lucide-react";
+import { Grid3X3,BadgeCheck,TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -12,7 +12,6 @@ import {
   ClipboardCheck,
   FileBadge,
   Gauge,
-  GraduationCap,
   LayoutDashboard,
   Library,
   MessageSquare,
@@ -109,6 +108,11 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
       href: "/admin/capacity-grid",
       icon: Grid3X3,
     },
+    {
+  label: "Training Impact",
+  href: "/admin/training-impact",
+  icon: TrendingUp,
+},
     { label: "Feedback", href: "/admin/feedback", icon: MessageSquare },
     {
       label: "Development Plans",

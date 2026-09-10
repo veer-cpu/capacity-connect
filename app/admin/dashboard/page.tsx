@@ -1,4 +1,14 @@
 import Link from "next/link";
+
+
+import {
+  ArrowRight,
+  Grid3X3,
+  Target,
+  TrendingUp,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   Award,
   BarChart3,
@@ -319,6 +329,46 @@ export default async function AdminDashboard() {
               )}
             </CardContent>
           </Card>
+          <section className="space-y-4">
+  <div>
+    <h2 className="text-xl font-semibold tracking-tight">
+      Capacity Intelligence
+    </h2>
+
+    <p className="mt-1 text-sm text-muted-foreground">
+      Move beyond training activity metrics to
+      understand organizational capability,
+      competency risk and measurable development
+      outcomes.
+    </p>
+  </div>
+
+  <div className="grid gap-4 lg:grid-cols-3">
+    <IntelligenceCard
+      title="Competency Heatmap"
+      description="Identify departments and capability areas with the highest collective competency gaps."
+      href="/admin/heatmap"
+      action="View heatmap"
+      icon={Target}
+    />
+
+    <IntelligenceCard
+      title="Capacity Grid"
+      description="Inspect employee-by-competency readiness, missing baselines and critical individual skill gaps."
+      href="/admin/capacity-grid"
+      action="Open capacity grid"
+      icon={Grid3X3}
+    />
+
+    <IntelligenceCard
+      title="Training Impact"
+      description="Evaluate whether completed training produced measurable competency improvement and target attainment."
+      href="/admin/training-impact"
+      action="Analyze impact"
+      icon={TrendingUp}
+    />
+  </div>
+</section>
 
           <Card>
             <CardHeader>
@@ -404,4 +454,50 @@ function formatDate(value: string | null) {
   if (!value) return "Not set";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "Not set" : date.toLocaleDateString();
+}
+function IntelligenceCard({
+  title,
+  description,
+  href,
+  action,
+  icon: Icon,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  action: string;
+  icon: React.ComponentType<{
+    className?: string;
+  }>;
+}) {
+  return (
+    <Card className="flex h-full flex-col">
+      <CardHeader>
+        <div className="mb-3 flex size-10 items-center justify-center rounded-lg border bg-muted/40">
+          <Icon className="size-5 text-muted-foreground" />
+        </div>
+
+        <CardTitle className="text-lg">
+          {title}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="flex flex-1 flex-col">
+        <p className="flex-1 text-sm leading-6 text-muted-foreground">
+          {description}
+        </p>
+
+        <Button
+          className="mt-5 w-full justify-between"
+          variant="outline"
+          nativeButton={false}
+          render={<Link href={href} />}
+        >
+          {action}
+
+          <ArrowRight className="size-4" />
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }
