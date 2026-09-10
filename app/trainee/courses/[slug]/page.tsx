@@ -62,18 +62,17 @@ if (!course) {
   notFound();
 }
 
-  const { data: enrollment } = await supabase
-    .from("enrollments")
-    .select(
-      `
-      id,
-      status,
-      progress_percentage
-    `,
-    )
-    .eq("course_id", course.id)
-    .eq("trainee_id", user.id)
-    .maybeSingle();
+const { data: enrollment } = await supabase
+  .from("enrollments")
+  .select(`
+    id,
+    status,
+    progress_percentage
+  `)
+  .eq("course_id", course.id)
+  .eq("trainee_id", user.id)
+  .in("status", ["active", "completed"])
+  .maybeSingle()
 
   if (!enrollment) {
     redirect(`/courses/${slug}`);

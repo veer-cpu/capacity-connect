@@ -65,8 +65,9 @@ export async function getAdminCompetencyHeatmap(): Promise<
             details: error.details,
             hint: error.hint,
         });
-
-        throw new Error(`Unable to load competency heatmap: ${error.message}`);
+throw new Error(
+  "Unable to load competency heatmap."
+);
     }
 
     return (data ?? []).map((row: AdminCompetencyHeatmapRpcRow) => {

@@ -106,7 +106,10 @@ export default async function AdminCompetenciesPage() {
         ) : (
           <div className="grid gap-6 lg:grid-cols-2">
             {competencies.map((competency) => (
-              <CompetencyCard key={competency.id} competency={competency} />
+             <CompetencyCard
+  key={`${competency.id}-${competency.updatedAt}`}
+  competency={competency}
+/>
             ))}
           </div>
         )}
@@ -158,6 +161,7 @@ function CompetencyCard({ competency }: { competency: AdminCompetency }) {
             <Field
               label="Name"
               name="name"
+                // key={`${competency.id}-name-${competency.name}`}
               defaultValue={competency.name}
               required
               maxLength={120}
@@ -165,6 +169,7 @@ function CompetencyCard({ competency }: { competency: AdminCompetency }) {
             <Field
               label="Category"
               name="category"
+              //  key={`${competency.id}-category-${competency.category ?? ""}`}
               defaultValue={competency.category ?? ""}
               maxLength={120}
             />
@@ -173,6 +178,7 @@ function CompetencyCard({ competency }: { competency: AdminCompetency }) {
             <span className="block font-medium">Description</span>
             <Textarea
               name="description"
+              //  key={`${competency.id}-description-${competency.description ?? ""}`}
               defaultValue={competency.description ?? ""}
               maxLength={1000}
               rows={3}
@@ -186,6 +192,7 @@ function CompetencyCard({ competency }: { competency: AdminCompetency }) {
               min={0}
               max={100}
               step="any"
+                // key={`${competency.id}-target-${competency.defaultTargetScore}`}
               defaultValue={competency.defaultTargetScore}
               required
             />

@@ -63,13 +63,13 @@ export default async function CoursePage({
   if (error || !course) {
     notFound();
   }
-
-  const { data: enrollment } = await supabase
-    .from("enrollments")
-    .select("id, status, progress_percentage")
-    .eq("trainee_id", user.id)
-    .eq("course_id", course.id)
-    .maybeSingle();
+const { data: enrollment } = await supabase
+  .from("enrollments")
+  .select("id, status, progress_percentage")
+  .eq("trainee_id", user.id)
+  .eq("course_id", course.id)
+  .in("status", ["active", "completed"])
+  .maybeSingle()
 
   return (
     <main className="mx-auto max-w-5xl p-8">

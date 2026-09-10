@@ -34,8 +34,9 @@ export async function getAdminFeedbackOverview(): Promise<
             details: error.details,
             hint: error.hint,
         });
-
-        throw new Error(`Unable to load feedback overview: ${error.message}`);
+throw new Error(
+  "Unable to load feedback overview."
+);
     }
 
     return (data ?? []).map((row: AdminFeedbackOverviewRow) => ({

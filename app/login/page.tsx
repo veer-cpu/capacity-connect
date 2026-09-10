@@ -49,26 +49,38 @@ export default function LoginPage() {
     }
 
     if (!profile.is_active) {
-      await supabase.auth.signOut();
-      setMessage("This account is inactive.");
+await supabase.auth.signOut({
+  scope: "local",
+});      setMessage("This account is inactive.");
       setLoading(false);
       return;
     }
 
     if (!profile.is_approved) {
-      await supabase.auth.signOut();
-      setMessage("Your account is waiting for approval.");
+await supabase.auth.signOut({
+  scope: "local",
+});      setMessage("Your account is waiting for approval.");
       setLoading(false);
       return;
     }
 
-    if (profile.role === "admin") {
-      router.push("/admin/dashboard");
-    } else if (profile.role === "trainer") {
-      router.push("/trainer/dashboard");
-    } else {
-      router.push("/trainee/dashboard");
-    }
+   if (profile.role === "admin") {
+  router.push("/admin/dashboard");
+} else if (profile.role === "trainer") {
+  router.push("/trainer/dashboard");
+} else if (profile.role === "trainee") {
+  router.push("/trainee/dashboard");
+} else {
+  await supabase.auth.signOut({
+    scope: "local",
+  });
+
+  setMessage(
+    "This account does not have a valid platform role."
+  );
+  setLoading(false);
+  return;
+}
 
     router.refresh();
   }

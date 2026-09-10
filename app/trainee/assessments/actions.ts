@@ -25,16 +25,44 @@ export async function submitAssessment(formData: FormData) {
 
   const answers: Record<string, string> = {};
 
-  for (const [key, value] of formData.entries()) {
-    if (
-      key.startsWith("answer_") &&
-      typeof value === "string"
-    ) {
-      const questionId = key.replace("answer_", "");
-
-      answers[questionId] = value;
-    }
+for (const [key, value] of formData.entries()) {
+  if (!key.startsWith("answer_")) {
+    continue;
   }
+
+  if (typeof value !== "string") {
+    throw new Error(
+      "Invalid assessment answer.",
+    );
+  }
+
+  const questionId =
+    key.slice("answer_".length);
+
+  const questionResult =
+    z.string().uuid().safeParse(questionId);
+
+  const optionResult =
+    z.string().uuid().safeParse(value);
+
+  if (
+    !questionResult.success ||
+    !optionResult.success
+  ) {
+    throw new Error(
+      "Invalid assessment answer.",
+    );
+  }
+
+  answers[questionResult.data] =
+    optionResult.data;
+}
+
+if (Object.keys(answers).length === 0) {
+  throw new Error(
+    "Please answer the assessment before submitting.",
+  );
+}
 
   const supabase = await createClient();
 
@@ -55,8 +83,7 @@ export async function submitAssessment(formData: FormData) {
     });
 
     throw new Error(
-      `Unable to submit assessment: ${error.message}`
-    );
+  "Unable to submit the assessment. Please verify your answers and try again.",);
   }
 
   const result = data as {

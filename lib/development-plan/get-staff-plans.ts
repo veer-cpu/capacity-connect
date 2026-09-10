@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth/require-role";
+import { requireAnyRole } from "@/lib/auth/require-role";
 import { createClient } from "@/lib/supabase/server";
 
 export type StaffDevelopmentPlanSummary = {
@@ -31,14 +31,12 @@ type StaffDevelopmentPlanSummaryRow = {
     progress_percentage: number | string;
 };
 
-async function requireStaffRole() {
-    return requireRole("admin").catch(() => requireRole("trainer"));
-}
+
 
 export async function getStaffDevelopmentPlans(): Promise<
     StaffDevelopmentPlanSummary[]
 > {
-    await requireStaffRole();
+   await requireAnyRole(["admin", "trainer"]);
 
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("staff_list_development_plans");

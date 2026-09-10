@@ -36,7 +36,7 @@ export async function revokeCertificate(formData: FormData): Promise<void> {
             details: error.details,
             hint: error.hint,
         });
-        throw new Error(`Unable to revoke certificate: ${error.message}`);
+        throw new Error("Unable to revoke certificate");
     }
 
     revalidatePath("/admin/certificates");

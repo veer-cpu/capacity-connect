@@ -68,7 +68,9 @@ last_evaluated_at
             details: error.details,
             hint: error.hint,
         });
-        throw new Error(`Unable to load development plan: ${error.message}`);
+        throw new Error(
+  "Unable to load development plan."
+);
     }
 
     if (!data) return null;

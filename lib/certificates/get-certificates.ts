@@ -36,7 +36,9 @@ export async function getMyCertificates(): Promise<TraineeCertificate[]> {
             details: error.details,
             hint: error.hint,
         });
-        throw new Error(`Unable to load certificates: ${error.message}`);
+        throw new Error(
+  "Unable to load certificates."
+);
     }
 
     return (data ?? []).map((row: CertificateRow) => ({

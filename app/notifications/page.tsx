@@ -15,8 +15,19 @@ import {
   getUnreadNotificationCount,
 } from "@/lib/notifications/get-notifications";
 import { markAllNotificationsRead, markNotificationRead } from "./actions";
+import {
+  dashboardForRole,
+  requireAuthenticatedProfile,
+} from "@/lib/auth/require-role";
+
+
 
 export default async function NotificationsPage() {
+  const { profile } =
+  await requireAuthenticatedProfile();
+
+const dashboardHref =
+  dashboardForRole(profile.role);
   const [notifications, unreadCount] = await Promise.all([
     getMyNotifications(),
     getUnreadNotificationCount(),
@@ -28,7 +39,7 @@ export default async function NotificationsPage() {
         description="Updates about your learning, assessments, development plan, and platform activity."
         actions={
           <Link
-            href="/trainee/dashboard"
+            href={dashboardHref}
             className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             Back to dashboard

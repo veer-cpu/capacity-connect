@@ -285,10 +285,9 @@ export async function uploadCourseResource(
       "Unable to upload learning resource:",
       storageError
     );
-
-    throw new Error(
-      `Unable to upload file: ${storageError.message}`
-    );
+throw new Error(
+  "Unable to upload the learning resource.",
+);
   }
 
   /*

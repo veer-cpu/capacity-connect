@@ -44,18 +44,19 @@ export default async function AssessmentPage({ params }: PageProps) {
     `,
     )
     .eq("id", id)
-    .in("status", ["published", "closed"])
+  .eq("status", "published")
     .single();
 
   if (error || !assessment) {
     notFound();
   }
 
-  const deadlinePassed = Boolean(
-    assessment.deadline &&
-    new Date(assessment.deadline).getTime() <= Date.now(),
-  );
-  const canSubmit = assessment.status === "published" && !deadlinePassed;
+  // const deadlinePassed = Boolean(
+  //   assessment.deadline &&
+  //   new Date(assessment.deadline).getTime() <= Date.now(),
+  // );
+  const canSubmit = assessment.status === "published" ;
+  // && !deadlinePassed;
 
   return (
     <main className="mx-auto max-w-3xl p-8">

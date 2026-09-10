@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-import { requireRole } from "@/lib/auth/require-role";
-import { createClient } from "@/lib/supabase/server";
+import { requireAnyRole } from "@/lib/auth/require-role";import { createClient } from "@/lib/supabase/server";
 
 export type StaffDevelopmentPlanItem = {
     id: string;
@@ -36,9 +35,10 @@ export type StaffDevelopmentPlan = {
 export async function getTraineeDevelopmentPlanForStaff(
     traineeId: string
 ): Promise<StaffDevelopmentPlan | null> {
-    const { user, profile } = await requireRole("admin").catch(async () => {
-        return requireRole("trainer");
-    });
+    const { user, profile } = await requireAnyRole([
+  "admin",
+  "trainer",
+]);
 
     const parsedTraineeId = z.string().uuid().safeParse(traineeId);
     if (!parsedTraineeId.success) {

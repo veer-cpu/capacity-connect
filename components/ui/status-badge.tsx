@@ -32,6 +32,7 @@ const statusStyles: Record<
   critical: { variant: "destructive" },
   urgent: { variant: "destructive" },
   revoked: { variant: "destructive" },
+  rejected: { variant: "destructive" },
   "deadline passed": { variant: "destructive" },
   closed: { variant: "secondary" },
   archived: { variant: "secondary" },

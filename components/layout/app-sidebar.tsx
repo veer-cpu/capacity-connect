@@ -1,5 +1,5 @@
 "use client";
-
+import { Grid3X3,BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -14,6 +14,7 @@ import {
   Gauge,
   GraduationCap,
   LayoutDashboard,
+  Library,
   MessageSquare,
   Network,
   Settings2,
@@ -48,6 +49,12 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
       href: "/trainee/assessments",
       icon: ClipboardCheck,
     },
+    {
+  label: "Competency Passport",
+  href: "/trainee/passport",
+  icon: BadgeCheck,
+},
+    
     { label: "Skill Gaps", href: "/trainee/competencies", icon: Target },
     {
       label: "Course Recommendations",
@@ -65,7 +72,13 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
       icon: Gauge,
     },
     { label: "Certificates", href: "/trainee/certificates", icon: Award },
+    {
+      label: "Knowledge Hub",
+      href: "/trainee/knowledge-hub",
+      icon: Library,
+    },
     { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Settings", href: "/settings", icon: Settings2 },
   ],
   trainer: [
     { label: "Dashboard", href: "/trainer/dashboard", icon: LayoutDashboard },
@@ -76,8 +89,14 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
       href: "/trainer/development-plans",
       icon: Network,
     },
+    {
+      label: "Knowledge Hub",
+      href: "/trainer/knowledge-hub",
+      icon: Library,
+    },
     { label: "Profile", href: "/trainer/profile", icon: Settings2 },
     { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Settings", href: "/settings", icon: Settings2 },
   ],
   admin: [
     { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -85,6 +104,11 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
     { label: "Courses", href: "/admin/courses", icon: BookOpen },
     { label: "Competencies", href: "/admin/competencies", icon: Target },
     { label: "Competency Heatmap", href: "/admin/heatmap", icon: BarChart3 },
+    {
+      label: "Capacity Grid",
+      href: "/admin/capacity-grid",
+      icon: Grid3X3,
+    },
     { label: "Feedback", href: "/admin/feedback", icon: MessageSquare },
     {
       label: "Development Plans",
@@ -92,13 +116,19 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
       icon: Network,
     },
     { label: "Certificates", href: "/admin/certificates", icon: FileBadge },
+    {
+      label: "Knowledge Hub",
+      href: "/admin/knowledge-hub",
+      icon: Library,
+    },
     { label: "Notifications", href: "/notifications", icon: Bell },
+    { label: "Settings", href: "/settings", icon: Settings2 },
   ],
 };
 
 export function AppSidebar({ role }: { role: ShellRole }) {
   return (
-    <aside className="hidden h-screen w-68 shrink-0 flex-col border-r bg-background lg:flex">
+    <aside className="hidden h-screen w-68 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
       <SidebarBrand role={role} />
       <Separator />
       <nav
@@ -107,8 +137,8 @@ export function AppSidebar({ role }: { role: ShellRole }) {
       >
         <NavigationLinks role={role} />
       </nav>
-      <div className="border-t p-4 text-xs text-muted-foreground">
-        Competency Intelligence Platform
+      <div className="border-t border-sidebar-border px-5 py-4 text-xs leading-5 text-sidebar-foreground/70">
+        Capacity Building &amp; Competency Intelligence
       </div>
     </aside>
   );
@@ -117,20 +147,20 @@ export function AppSidebar({ role }: { role: ShellRole }) {
 export function SidebarBrand({ role }: { role: ShellRole }) {
   return (
     <div className="flex items-start gap-3 px-5 py-6">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[var(--institutional-saffron)] text-primary">
         <ShieldCheck className="size-5" aria-hidden="true" />
       </div>
       <div className="min-w-0">
-        <p className="text-sm font-bold leading-tight tracking-[0.16em]">
+        <p className="text-sm font-bold leading-tight tracking-[0.16em] text-white">
           CAPACITY
         </p>
-        <p className="text-sm font-bold leading-tight tracking-[0.16em] text-primary">
+        <p className="text-sm font-bold leading-tight tracking-[0.16em] text-[var(--institutional-saffron)]">
           CONNECT
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Competency Intelligence
+        <p className="mt-1 text-xs text-sidebar-foreground/70">
+          MoES / IMD Capacity Building
         </p>
-        <Badge variant="secondary" className="mt-3 font-normal">
+        <Badge className="mt-3 rounded-sm bg-white/10 font-semibold tracking-[0.1em] text-white uppercase hover:bg-white/10">
           {roleLabels[role]}
         </Badge>
       </div>
@@ -160,10 +190,10 @@ export function NavigationLinks({
             href={item.href}
             onClick={onNavigate}
             aria-current={isActive ? "page" : undefined}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-3 border-l-2 px-3 py-2 text-sm font-medium transition-colors ${
               isActive
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "border-[var(--institutional-saffron)] bg-white/10 text-white"
+                : "border-transparent text-sidebar-foreground/70 hover:bg-white/8 hover:text-white"
             }`}
           >
             <Icon className="size-4 shrink-0" aria-hidden="true" />

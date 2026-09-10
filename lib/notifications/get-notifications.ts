@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
-
-import { createClient } from "@/lib/supabase/server";
+import {
+  requireAuthenticatedProfile,
+} from "@/lib/auth/require-role";
 
 export type NotificationItem = {
     id: string;
@@ -30,23 +30,11 @@ type NotificationRow = {
     created_at: string;
 };
 
-async function requireAuthenticatedUser() {
-    const supabase = await createClient();
-    const {
-        data: { user },
-        error,
-    } = await supabase.auth.getUser();
 
-    if (error || !user) {
-        redirect("/login");
-    }
-
-    return { supabase, user };
-}
 
 export async function getMyNotifications(limit = 50): Promise<NotificationItem[]> {
-    const { supabase } = await requireAuthenticatedUser();
-    const { data, error } = await supabase.rpc("get_my_notifications", {
+const { supabase } =
+  await requireAuthenticatedProfile();    const { data, error } = await supabase.rpc("get_my_notifications", {
         p_limit: limit,
     });
 
@@ -57,7 +45,7 @@ export async function getMyNotifications(limit = 50): Promise<NotificationItem[]
             details: error.details,
             hint: error.hint,
         });
-        throw new Error(`Unable to load notifications: ${error.message}`);
+        throw new Error("Unable to load notifications");
     }
 
     return (data ?? []).map((row: NotificationRow) => ({
@@ -76,8 +64,8 @@ export async function getMyNotifications(limit = 50): Promise<NotificationItem[]
 }
 
 export async function getUnreadNotificationCount(): Promise<number> {
-    const { supabase } = await requireAuthenticatedUser();
-    const { data, error } = await supabase.rpc(
+const { supabase } =
+  await requireAuthenticatedProfile();    const { data, error } = await supabase.rpc(
         "get_my_unread_notification_count"
     );
 
@@ -88,7 +76,7 @@ export async function getUnreadNotificationCount(): Promise<number> {
             details: error.details,
             hint: error.hint,
         });
-        throw new Error(`Unable to load unread notification count: ${error.message}`);
+        throw new Error("Unable to load unread notification count");
     }
 
     return Number(data ?? 0);

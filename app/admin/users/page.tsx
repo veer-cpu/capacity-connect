@@ -200,7 +200,11 @@ export default async function AdminUsersPage() {
                                 name="userId"
                                 value={item.userId}
                               />
-                              <Select name="newRole" defaultValue={item.role}>
+                              <Select
+  key={`${item.userId}-${item.role}`}
+  name="newRole"
+  defaultValue={item.role}
+>
                                 <SelectTrigger
                                   size="sm"
                                   aria-label={`Role for ${item.fullName}`}

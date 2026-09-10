@@ -25,7 +25,7 @@ export async function getTraineeCourseResources(
     .select("id")
     .eq("course_id", courseId)
     .eq("trainee_id", user.id)
-    .eq("status", "active")
+    .in("status", ["active", "completed"])
     .maybeSingle();
 
   if (enrollmentError) {
@@ -37,11 +37,11 @@ export async function getTraineeCourseResources(
     throw new Error("Unable to verify your course enrollment.");
   }
 
-  if (!enrollment) {
-    throw new Error(
-      "You are not enrolled in this course or your enrollment is not active."
-    );
-  }
+ if (!enrollment) {
+  throw new Error(
+    "You are not enrolled in this course or your enrollment is no longer accessible."
+  );
+}
 
   const { data: resources, error } = await supabase
     .from("learning_resources")
