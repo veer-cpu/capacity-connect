@@ -78,6 +78,40 @@ Never rely on client-side role checks for security.
 ---
 
 ## Existing major functionality
+## Assignments
+
+Tables:
+- assignments
+- assignment_submissions
+
+Trusted RPCs:
+- trainer_save_assignment
+- submit_assignment
+- trainer_evaluate_assignment
+
+Trainer creates assignments for assigned courses.
+Trainee submits text and/or URL.
+Trainer evaluates with score/feedback or requests resubmission.
+
+Do not allow direct browser INSERT/UPDATE on assignment tables.
+
+## Course Approval
+
+courses now has:
+- approval_status
+- submitted_for_review_at
+- reviewed_by
+- reviewed_at
+- review_reason
+
+Workflow:
+
+Trainer draft
+→ submit for review
+→ admin approve/reject
+→ approved course may then be published using existing publication workflow.
+
+Approval and publication are separate concepts.
 
 Already implemented:
 
@@ -252,3 +286,19 @@ Then:
 12. final presentation preparation
 
 AI integration is optional and LAST.
+
+## Reports
+
+Upcoming reports should use existing real platform data and trusted RPCs/helpers where available.
+
+Target reports:
+- Competency Gap Report
+- Training Need Report
+- Course Completion Report
+- Training Impact Report
+- Certificate Report
+- Department Readiness Report
+- Trainer Performance Report
+
+CSV export should export the currently filtered/visible real data.
+Do not fabricate values.

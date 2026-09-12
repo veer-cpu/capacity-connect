@@ -42,6 +42,7 @@ import {
   assignCourseTrainer,
   createCourse,
   publishCourse,
+  reviewCourse,
 } from "./actions";
 
 type CourseView = {
@@ -66,6 +67,9 @@ export default async function AdminCoursesPage() {
   );
 
   const totalCourses = courses.length;
+  const reviewQueueCourses = courseViews.filter(
+    (v) => v.course.approvalStatus === "submitted"
+  );
   const draftCourses = courses.filter(
     (course) => course.status === "draft",
   ).length;
@@ -80,7 +84,7 @@ export default async function AdminCoursesPage() {
     <div className="space-y-8">
       <PageHeader
         title="Course Management"
-        description="Create and manage competency-aligned training programs."
+        description="Create and manage competency-aligned training programs and course review approvals."
         actions={
           <Link
             href="/admin/dashboard"
@@ -91,12 +95,106 @@ export default async function AdminCoursesPage() {
         }
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <SummaryCard label="Total Courses" value={totalCourses} />
+        <SummaryCard label="Pending Review" value={reviewQueueCourses.length} />
         <SummaryCard label="Draft" value={draftCourses} />
         <SummaryCard label="Published" value={publishedCourses} />
         <SummaryCard label="Archived" value={archivedCourses} />
       </section>
+
+      {/* Course Review Queue Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Course Review Queue ({reviewQueueCourses.length})</CardTitle>
+          <CardDescription>
+            Inspect courses submitted by trainers for institutional review and approval before publication.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {reviewQueueCourses.length === 0 ? (
+            <Alert>
+              <AlertTitle>No courses pending review.</AlertTitle>
+              <AlertDescription className="text-xs">
+                All submitted courses have been reviewed.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-6 divide-y">
+              {reviewQueueCourses.map((view) => (
+                <div key={view.course.courseId} className="pt-4 first:pt-0 space-y-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{view.course.title}</h3>
+                        <Badge variant="secondary" className="capitalize">
+                          {view.course.difficulty}
+                        </Badge>
+                        <Badge variant="outline">
+                          Submitted: {view.course.submittedForReviewAt ? new Date(view.course.submittedForReviewAt).toLocaleDateString() : "Recently"}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Trainer: {view.course.trainerName ?? "Unassigned"} | Category: {view.course.category ?? "General"} | Slug: /{view.course.slug}
+                      </p>
+                      {view.course.description && (
+                        <p className="mt-2 text-sm text-muted-foreground">{view.course.description}</p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        <span className="text-xs text-muted-foreground mr-1">Competencies:</span>
+                        {view.mappedCompetencies.length === 0 ? (
+                          <span className="text-xs text-muted-foreground italic">None mapped</span>
+                        ) : (
+                          view.mappedCompetencies.map((comp) => (
+                            <Badge key={comp} variant="outline" className="text-xs py-0">
+                              {comp}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2 bg-muted/30 p-4 rounded-lg">
+                    {/* Approve Action */}
+                    <div className="flex items-center justify-between border-r pr-4">
+                      <div>
+                        <p className="font-medium text-sm text-green-700">Approve Course</p>
+                        <p className="text-xs text-muted-foreground">Mark course as approved for publishing.</p>
+                      </div>
+                      <form action={reviewCourse}>
+                        <input type="hidden" name="courseId" value={view.course.courseId} />
+                        <input type="hidden" name="decision" value="approve" />
+                        <Button type="submit" size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                          Approve Course
+                        </Button>
+                      </form>
+                    </div>
+
+                    {/* Reject Action */}
+                    <form action={reviewCourse} className="space-y-2">
+                      <input type="hidden" name="courseId" value={view.course.courseId} />
+                      <input type="hidden" name="decision" value="reject" />
+                      <p className="font-medium text-sm text-red-700">Reject Course</p>
+                      <Textarea
+                        name="reason"
+                        required
+                        rows={2}
+                        maxLength={1000}
+                        placeholder="Required reason explaining why the course was rejected..."
+                        className="text-xs bg-white"
+                      />
+                      <Button type="submit" size="sm" variant="destructive">
+                        Reject Course
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -214,7 +312,9 @@ function CourseRow({
   trainers: AssignableTrainer[];
 }) {
   const { course, mappedCompetencies } = view;
-  const canPublish = Boolean(course.trainerId) && mappedCompetencies.length > 0;
+  const isApproved = course.approvalStatus === "approved";
+  const canPublish = isApproved && Boolean(course.trainerId) && mappedCompetencies.length > 0;
+
   return (
     <TableRow className="align-top">
       <TableCell>
@@ -254,7 +354,12 @@ function CourseRow({
         </div>
       </TableCell>
       <TableCell>
-        <StatusBadge status={course.status} />
+        <div className="space-y-1">
+          <div><StatusBadge status={course.status} /></div>
+          <Badge variant="outline" className="text-xs capitalize">
+            Approval: {course.approvalStatus}
+          </Badge>
+        </div>
       </TableCell>
       <TableCell>
         <div className="space-y-3">
@@ -280,7 +385,9 @@ function CourseRow({
                     Publish unavailable
                   </AlertTitle>
                   <AlertDescription className="text-xs">
-                    {!course.trainerId
+                    {!isApproved
+                      ? "Course must be approved before publishing"
+                      : !course.trainerId
                       ? "Assign a trainer"
                       : "Map at least one competency"}{" "}
                     before publishing.

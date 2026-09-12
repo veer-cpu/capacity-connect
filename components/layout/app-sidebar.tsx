@@ -11,6 +11,7 @@ import {
   BrainCircuit,
   ClipboardCheck,
   FileBadge,
+  FileText,
   Gauge,
   LayoutDashboard,
   Library,
@@ -113,6 +114,7 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
       href: "/admin/training-impact",
       icon: TrendingUp,
     },
+    { label: "Reports", href: "/admin/reports", icon: FileText },
     { label: "Feedback", href: "/admin/feedback", icon: MessageSquare },
     {
       label: "Development Plans",

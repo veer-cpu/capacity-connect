@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type AdminCourseDifficulty = "beginner" | "intermediate" | "advanced";
 export type AdminCourseStatus = "draft" | "published" | "archived";
+export type CourseApprovalStatus = "draft" | "submitted" | "approved" | "rejected";
 
 export type AdminCourse = {
 	courseId: string;
@@ -12,6 +13,10 @@ export type AdminCourse = {
 	category: string | null;
 	difficulty: AdminCourseDifficulty;
 	status: AdminCourseStatus;
+	approvalStatus: CourseApprovalStatus;
+	submittedForReviewAt: string | null;
+	reviewedAt: string | null;
+	reviewReason: string | null;
 	trainerId: string | null;
 	trainerName: string | null;
 	estimatedDurationMinutes: number | null;
@@ -26,6 +31,10 @@ type AdminCourseRow = {
 	category: string | null;
 	difficulty: AdminCourseDifficulty;
 	status: AdminCourseStatus;
+	approval_status?: CourseApprovalStatus | null;
+	submitted_for_review_at?: string | null;
+	reviewed_at?: string | null;
+	review_reason?: string | null;
 	trainer_id: string | null;
 	trainer_name: string | null;
 	estimated_duration_minutes: number | string | null;
@@ -57,6 +66,10 @@ export async function getAdminCourses(): Promise<AdminCourse[]> {
 		category: row.category,
 		difficulty: row.difficulty,
 		status: row.status,
+		approvalStatus: row.approval_status ?? "draft",
+		submittedForReviewAt: row.submitted_for_review_at ?? null,
+		reviewedAt: row.reviewed_at ?? null,
+		reviewReason: row.review_reason ?? null,
 		trainerId: row.trainer_id,
 		trainerName: row.trainer_name,
 		estimatedDurationMinutes:

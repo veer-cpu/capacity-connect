@@ -30,6 +30,10 @@ export type TrainerCourseDetail = {
   title: string;
   slug: string;
   status: string;
+  approvalStatus: "draft" | "submitted" | "approved" | "rejected";
+  submittedForReviewAt: string | null;
+  reviewedAt: string | null;
+  reviewReason: string | null;
   category: string | null;
   difficulty: string;
   description: string | null;
@@ -56,6 +60,10 @@ export async function getTrainerCourseDetail(
       title,
       slug,
       status,
+      approval_status,
+      submitted_for_review_at,
+      reviewed_at,
+      review_reason,
       category,
       difficulty,
       description,
@@ -261,6 +269,10 @@ if (lessonsError) {
     title: course.title,
     slug: course.slug,
     status: course.status,
+    approvalStatus: (course.approval_status as "draft" | "submitted" | "approved" | "rejected") ?? "draft",
+    submittedForReviewAt: course.submitted_for_review_at ?? null,
+    reviewedAt: course.reviewed_at ?? null,
+    reviewReason: course.review_reason ?? null,
     category: course.category,
     difficulty: course.difficulty,
     description: course.description,

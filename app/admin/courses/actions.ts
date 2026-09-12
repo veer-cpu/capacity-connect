@@ -206,3 +206,56 @@ export async function assignCourseTrainer(formData: FormData): Promise<void> {
 
 	revalidatePath("/admin/courses");
 }
+
+const reviewCourseSchema = z
+  .object({
+    courseId: z.string().uuid(),
+    decision: z.enum(["approve", "reject"]),
+    reason: z.preprocess(
+      (val) => (val === "" ? undefined : val),
+      z.string().trim().max(1000).optional()
+    ),
+  })
+  .refine(
+    (data) => data.decision !== "reject" || (data.reason && data.reason.trim().length > 0),
+    {
+      message: "Rejection reason is required.",
+      path: ["reason"],
+    }
+  );
+
+export async function reviewCourse(formData: FormData): Promise<void> {
+  await requireRole("admin");
+
+  const parsed = reviewCourseSchema.safeParse({
+    courseId: formData.get("courseId"),
+    decision: formData.get("decision"),
+    reason: formData.get("reason"),
+  });
+
+  if (!parsed.success) {
+    throw new Error(
+      parsed.error.issues[0]?.message ?? "Invalid course review submission."
+    );
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_review_course", {
+    p_course_id: parsed.data.courseId,
+    p_decision: parsed.data.decision,
+    p_reason: parsed.data.reason ?? null,
+  });
+
+  if (error) {
+    console.error("Unable to review course:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(`Unable to submit course review decision: ${error.message}`);
+  }
+
+  revalidatePath("/admin/courses");
+}
+

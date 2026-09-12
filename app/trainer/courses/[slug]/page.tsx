@@ -2,11 +2,18 @@ import Link from "next/link";
 
 import { getTrainerCourseDetail } from "@/lib/trainer/get-course-detail";
 import { getTrainerCourseTrainees } from "@/lib/trainer/get-course-trainees";
+import { getTrainerCourseAssignments } from "@/lib/trainer/get-course-assignments";
 import {
   deleteCourseResource,
   uploadCourseResource,
 } from "./resource-actions";
 import { getTrainerCourseResources } from "@/lib/trainer/get-course-resources";
+import {
+  evaluateSubmission,
+  saveAssignment,
+  submitCourseForReview,
+} from "./actions";
+
 type PageProps = {
   params: Promise<{
     slug: string;
@@ -18,22 +25,21 @@ export default async function TrainerCoursePage({
 }: PageProps) {
   const { slug } = await params;
 
-  const course =
-    await getTrainerCourseDetail(slug);
-const trainees =
-  await getTrainerCourseTrainees(
-    course.id
-  );
-  const resources =
-  await getTrainerCourseResources(
-    course.id
-  );
+  const course = await getTrainerCourseDetail(slug);
+  const trainees = await getTrainerCourseTrainees(course.id);
+  const resources = await getTrainerCourseResources(course.id);
+  const assignments = await getTrainerCourseAssignments(course.id);
+
   return (
     <main className="mx-auto max-w-6xl p-8">
       <section>
         <div className="flex flex-wrap items-center gap-3">
           <span className="rounded-full border px-3 py-1 text-xs capitalize">
-            {course.status}
+            Publish Status: {course.status}
+          </span>
+
+          <span className="rounded-full border px-3 py-1 text-xs capitalize">
+            Approval: {course.approvalStatus}
           </span>
 
           <span className="rounded-full border px-3 py-1 text-xs capitalize">
@@ -55,6 +61,54 @@ const trainees =
           <p className="mt-4 max-w-3xl text-gray-600">
             {course.description}
           </p>
+        )}
+      </section>
+
+      {/* Approval Status Banner */}
+      <section className="mt-6 rounded-xl border p-5 bg-gray-50/50">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">Course Approval Status:</span>
+              <span className={`rounded-full px-3 py-0.5 text-xs font-medium capitalize border ${
+                course.approvalStatus === "approved"
+                  ? "bg-green-50 text-green-700 border-green-200"
+                  : course.approvalStatus === "submitted"
+                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                  : course.approvalStatus === "rejected"
+                  ? "bg-red-50 text-red-700 border-red-200"
+                  : "bg-gray-100 text-gray-700 border-gray-300"
+              }`}>
+                {course.approvalStatus}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              {course.approvalStatus === "draft" && "Submit this course for admin review once draft content and competencies are ready."}
+              {course.approvalStatus === "submitted" && "Submitted for review. Pending admin approval."}
+              {course.approvalStatus === "approved" && "Course approved by administration. Ready for publication."}
+              {course.approvalStatus === "rejected" && "Review feedback provided below. Make necessary updates and resubmit."}
+            </p>
+          </div>
+
+          {(course.approvalStatus === "draft" || course.approvalStatus === "rejected") && (
+            <form action={submitCourseForReview}>
+              <input type="hidden" name="courseId" value={course.id} />
+              <input type="hidden" name="slug" value={course.slug} />
+              <button
+                type="submit"
+                className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+              >
+                {course.approvalStatus === "rejected" ? "Resubmit for Review" : "Submit Course for Review"}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {course.approvalStatus === "rejected" && course.reviewReason && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            <p className="font-semibold">Admin Rejection Reason:</p>
+            <p className="mt-1">{course.reviewReason}</p>
+          </div>
         )}
       </section>
 
@@ -454,6 +508,306 @@ const trainees =
     </div>
   )}
 </section>
+
+{/* Assignments Section */}
+<section className="mt-10">
+  <div className="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h2 className="text-xl font-semibold">Course Assignments &amp; Evaluation</h2>
+      <p className="mt-1 text-sm text-gray-600">
+        Create assignments for trainees, inspect submissions, evaluate scores, and request resubmissions.
+      </p>
+    </div>
+  </div>
+
+  {/* Create Assignment Form */}
+  <div className="mt-6 rounded-xl border p-6 bg-gray-50/40">
+    <h3 className="text-base font-semibold">Create New Assignment</h3>
+    <form action={saveAssignment} className="mt-4 space-y-4">
+      <input type="hidden" name="courseId" value={course.id} />
+      <input type="hidden" name="slug" value={course.slug} />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="assign-title" className="block text-sm font-medium text-gray-700">
+            Assignment Title *
+          </label>
+          <input
+            id="assign-title"
+            name="title"
+            required
+            maxLength={150}
+            className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+            placeholder="e.g. Weather Radar Data Interpretation Exercise"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="assign-module" className="block text-sm font-medium text-gray-700">
+            Associate Module (Optional)
+          </label>
+          <select
+            id="assign-module"
+            name="moduleId"
+            className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+          >
+            <option value="">Course-wide (No specific module)</option>
+            {course.modules.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.title}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="assign-score" className="block text-sm font-medium text-gray-700">
+            Max Score *
+          </label>
+          <input
+            id="assign-score"
+            name="maxScore"
+            type="number"
+            required
+            min={1}
+            max={1000}
+            defaultValue={100}
+            className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="assign-due" className="block text-sm font-medium text-gray-700">
+            Due Date &amp; Time (Optional)
+          </label>
+          <input
+            id="assign-due"
+            name="dueAt"
+            type="datetime-local"
+            className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="assign-status" className="block text-sm font-medium text-gray-700">
+            Lifecycle Status *
+          </label>
+          <select
+            id="assign-status"
+            name="status"
+            defaultValue="draft"
+            required
+            className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+          >
+            <option value="draft">Draft (hidden from trainees)</option>
+            <option value="published">Published (open for submission)</option>
+            <option value="closed">Closed (submissions closed)</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="assign-desc" className="block text-sm font-medium text-gray-700">
+          Description / Guidelines
+        </label>
+        <textarea
+          id="assign-desc"
+          name="description"
+          rows={3}
+          maxLength={2000}
+          className="mt-1 w-full rounded-md border bg-white px-3 py-2 text-sm"
+          placeholder="Detailed task instructions, expected output format, or reference link..."
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+      >
+        Save Assignment
+      </button>
+    </form>
+  </div>
+
+  {/* Assignment List */}
+  {assignments.length === 0 ? (
+    <div className="mt-6 rounded-xl border p-6 text-center text-sm text-gray-500">
+      No assignments created for this course yet.
+    </div>
+  ) : (
+    <div className="mt-6 space-y-6">
+      {assignments.map((assignment) => {
+        const pendingCount = assignment.submissions.filter((s) => s.status === "submitted").length;
+
+        return (
+          <article key={assignment.id} className="rounded-xl border p-5 space-y-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-semibold">{assignment.title}</h3>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize border ${
+                    assignment.status === "published"
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : assignment.status === "closed"
+                      ? "bg-gray-100 text-gray-700 border-gray-300"
+                      : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                  }`}>
+                    {assignment.status}
+                  </span>
+                  {assignment.moduleTitle && (
+                    <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                      Module: {assignment.moduleTitle}
+                    </span>
+                  )}
+                </div>
+                {assignment.description && (
+                  <p className="mt-2 text-sm text-gray-600">{assignment.description}</p>
+                )}
+                <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-500">
+                  <span>Max Score: {assignment.maxScore}</span>
+                  <span>Due: {assignment.dueAt ? new Date(assignment.dueAt).toLocaleString() : "No due date"}</span>
+                  <span>Total Submissions: {assignment.submissions.length}</span>
+                  {pendingCount > 0 && (
+                    <span className="font-semibold text-amber-600">
+                      {pendingCount} pending evaluation
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Submissions Section */}
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-semibold text-gray-800">
+                Trainee Submissions ({assignment.submissions.length})
+              </h4>
+
+              {assignment.submissions.length === 0 ? (
+                <p className="mt-2 text-xs text-gray-500">No trainee submissions yet.</p>
+              ) : (
+                <div className="mt-3 space-y-4">
+                  {assignment.submissions.map((sub) => (
+                    <div key={sub.id} className="rounded-lg border bg-gray-50/50 p-4 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="font-medium text-sm text-gray-900">{sub.traineeName}</p>
+                          <p className="text-xs text-gray-500">{sub.traineeEmail}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-xs capitalize border ${
+                            sub.status === "evaluated"
+                              ? "bg-green-50 text-green-700 border-green-200"
+                              : sub.status === "resubmission_required"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}>
+                            {sub.status === "resubmission_required" ? "Resubmission Required" : sub.status}
+                          </span>
+                          {sub.score !== null && (
+                            <span className="text-sm font-semibold text-gray-800">
+                              {sub.score} / {assignment.maxScore}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {sub.submissionText && (
+                        <div className="rounded border bg-white p-3 text-sm text-gray-800">
+                          <p className="text-xs font-semibold text-gray-500 mb-1">Submission Text:</p>
+                          <p className="whitespace-pre-wrap">{sub.submissionText}</p>
+                        </div>
+                      )}
+
+                      {sub.submissionUrl && (
+                        <div className="text-xs">
+                          <span className="font-semibold text-gray-500">Submission Link: </span>
+                          <a
+                            href={sub.submissionUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-medium text-blue-600 underline"
+                          >
+                            {sub.submissionUrl}
+                          </a>
+                        </div>
+                      )}
+
+                      {sub.feedback && (
+                        <div className="text-xs text-gray-600 bg-white p-2 rounded border">
+                          <span className="font-semibold">Trainer Feedback: </span>
+                          {sub.feedback}
+                        </div>
+                      )}
+
+                      {/* Evaluation Form */}
+                      <form action={evaluateSubmission} className="mt-3 rounded border bg-white p-3 space-y-3">
+                        <input type="hidden" name="submissionId" value={sub.id} />
+                        <input type="hidden" name="slug" value={course.slug} />
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700">
+                              Score (Max {assignment.maxScore})
+                            </label>
+                            <input
+                              type="number"
+                              name="score"
+                              min={0}
+                              max={assignment.maxScore}
+                              defaultValue={sub.score ?? undefined}
+                              className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700">
+                              Evaluation Outcome *
+                            </label>
+                            <select
+                              name="status"
+                              defaultValue={sub.status === "resubmission_required" ? "resubmission_required" : "evaluated"}
+                              required
+                              className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                            >
+                              <option value="evaluated">Evaluated / Graded</option>
+                              <option value="resubmission_required">Request Resubmission</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700">
+                            Trainer Feedback
+                          </label>
+                          <textarea
+                            name="feedback"
+                            rows={2}
+                            maxLength={2000}
+                            defaultValue={sub.feedback ?? ""}
+                            placeholder="Provide evaluation score notes or guidelines for resubmission..."
+                            className="mt-1 w-full rounded border px-2 py-1 text-sm"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="rounded bg-black px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800"
+                        >
+                          Submit Evaluation
+                        </button>
+                      </form>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  )}
+</section>
+
 <section className="mt-10">
   <h2 className="text-xl font-semibold">
     Enrolled Trainees

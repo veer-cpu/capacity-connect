@@ -100,3 +100,62 @@ if (feedbackError) {
    
     revalidatePath(`/trainee/courses/${parsed.data.courseSlug}`);
 }
+
+const submitAssignmentSchema = z
+  .object({
+    assignmentId: z.string().uuid(),
+    courseSlug: z.string().min(1),
+    submissionText: z.preprocess(
+      (val) => (val === "" ? undefined : val),
+      z.string().trim().max(5000).optional()
+    ),
+    submissionUrl: z.preprocess(
+      (val) => (val === "" ? undefined : val),
+      z.string().trim().url("Must be a valid web URL.").max(2048).optional()
+    ),
+  })
+  .refine(
+    (data) => Boolean(data.submissionText) || Boolean(data.submissionUrl),
+    {
+      message: "Please provide either submission text or a valid URL link.",
+      path: ["submissionText"],
+    }
+  );
+
+export async function submitAssignmentAction(formData: FormData): Promise<void> {
+  await requireRole("trainee");
+
+  const parsed = submitAssignmentSchema.safeParse({
+    assignmentId: formData.get("assignmentId"),
+    courseSlug: formData.get("courseSlug"),
+    submissionText: formData.get("submissionText"),
+    submissionUrl: formData.get("submissionUrl"),
+  });
+
+  if (!parsed.success) {
+    throw new Error(
+      parsed.error.issues[0]?.message ?? "Invalid submission details."
+    );
+  }
+
+  const { assignmentId, courseSlug, submissionText, submissionUrl } = parsed.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("submit_assignment", {
+    p_assignment_id: assignmentId,
+    p_submission_text: submissionText ?? null,
+    p_submission_url: submissionUrl ?? null,
+  });
+
+  if (error) {
+    console.error("Unable to submit assignment:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(`Unable to submit assignment: ${error.message}`);
+  }
+
+  revalidatePath(`/trainee/courses/${courseSlug}`);
+}
