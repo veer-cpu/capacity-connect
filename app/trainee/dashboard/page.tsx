@@ -11,10 +11,11 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { AnnouncementFeed } from "@/components/announcements/announcement-feed";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants,Button } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -149,6 +150,8 @@ export default async function TraineeDashboard() {
         title={`Welcome back, ${traineeName}`}
         description="Track your learning progress, competency gaps, and personalized development journey."
       />
+
+      <AnnouncementFeed />
 
       <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <MetricCard

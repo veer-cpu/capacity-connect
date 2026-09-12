@@ -1,5 +1,5 @@
 "use client";
-import { Grid3X3,BadgeCheck,TrendingUp } from "lucide-react";
+import { Grid3X3, BadgeCheck, TrendingUp, Building2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -14,6 +14,7 @@ import {
   Gauge,
   LayoutDashboard,
   Library,
+  Megaphone,
   MessageSquare,
   Network,
   Settings2,
@@ -49,11 +50,11 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
       icon: ClipboardCheck,
     },
     {
-  label: "Competency Passport",
-  href: "/trainee/passport",
-  icon: BadgeCheck,
-},
-    
+      label: "Competency Passport",
+      href: "/trainee/passport",
+      icon: BadgeCheck,
+    },
+
     { label: "Skill Gaps", href: "/trainee/competencies", icon: Target },
     {
       label: "Course Recommendations",
@@ -102,22 +103,31 @@ export const roleNavigation: Record<ShellRole, NavItem[]> = {
     { label: "Users", href: "/admin/users", icon: Users },
     { label: "Courses", href: "/admin/courses", icon: BookOpen },
     { label: "Competencies", href: "/admin/competencies", icon: Target },
-    { label: "Competency Heatmap", href: "/admin/heatmap", icon: BarChart3 },
     {
       label: "Capacity Grid",
-      href: "/admin/capacity-grid",
+      href: "/admin/heatmap",
       icon: Grid3X3,
     },
     {
-  label: "Training Impact",
-  href: "/admin/training-impact",
-  icon: TrendingUp,
-},
+      label: "Training Impact",
+      href: "/admin/training-impact",
+      icon: TrendingUp,
+    },
     { label: "Feedback", href: "/admin/feedback", icon: MessageSquare },
     {
       label: "Development Plans",
       href: "/admin/development-plans",
       icon: Network,
+    },
+    {
+      label: "Organization",
+      href: "/admin/organization",
+      icon: Building2,
+    },
+    {
+      label: "Announcements",
+      href: "/admin/announcements",
+      icon: Megaphone,
     },
     { label: "Certificates", href: "/admin/certificates", icon: FileBadge },
     {

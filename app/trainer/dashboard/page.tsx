@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { AnnouncementFeed } from "@/components/announcements/announcement-feed";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -90,6 +91,8 @@ export default async function TrainerDashboardPage() {
         title="Trainer Dashboard"
         description="Monitor learner progress, assessments, competency development, and training outcomes."
       />
+
+      <AnnouncementFeed />
 
       <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <MetricCard

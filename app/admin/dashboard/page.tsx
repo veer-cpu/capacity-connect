@@ -1,12 +1,6 @@
 import Link from "next/link";
 
-
-import {
-  ArrowRight,
-  Grid3X3,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowRight, Grid3X3, Target, TrendingUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { AnnouncementFeed } from "@/components/announcements/announcement-feed";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -92,6 +87,8 @@ export default async function AdminDashboard() {
           </AlertTitle>
         </Alert>
       )}
+
+      <AnnouncementFeed />
 
       <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
         <MetricCard
@@ -330,45 +327,44 @@ export default async function AdminDashboard() {
             </CardContent>
           </Card>
           <section className="space-y-4">
-  <div>
-    <h2 className="text-xl font-semibold tracking-tight">
-      Capacity Intelligence
-    </h2>
+            <div>
+              <h2 className="text-xl font-semibold tracking-tight">
+                Capacity Intelligence
+              </h2>
 
-    <p className="mt-1 text-sm text-muted-foreground">
-      Move beyond training activity metrics to
-      understand organizational capability,
-      competency risk and measurable development
-      outcomes.
-    </p>
-  </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Move beyond training activity metrics to understand
+                organizational capability, competency risk and measurable
+                development outcomes.
+              </p>
+            </div>
 
-  <div className="grid gap-4 lg:grid-cols-3">
-    <IntelligenceCard
-      title="Competency Heatmap"
-      description="Identify departments and capability areas with the highest collective competency gaps."
-      href="/admin/heatmap"
-      action="View heatmap"
-      icon={Target}
-    />
+            <div className="grid gap-4 lg:grid-cols-3">
+              <IntelligenceCard
+                title="Competency Heatmap"
+                description="Identify departments and capability areas with the highest collective competency gaps."
+                href="/admin/heatmap"
+                action="View heatmap"
+                icon={Target}
+              />
 
-    <IntelligenceCard
-      title="Capacity Grid"
-      description="Inspect employee-by-competency readiness, missing baselines and critical individual skill gaps."
-      href="/admin/capacity-grid"
-      action="Open capacity grid"
-      icon={Grid3X3}
-    />
+              <IntelligenceCard
+                title="Capacity Grid"
+                description="Inspect employee-by-competency readiness, missing baselines and critical individual skill gaps."
+                href="/admin/heatmap"
+                action="Open capacity grid"
+                icon={Grid3X3}
+              />
 
-    <IntelligenceCard
-      title="Training Impact"
-      description="Evaluate whether completed training produced measurable competency improvement and target attainment."
-      href="/admin/training-impact"
-      action="Analyze impact"
-      icon={TrendingUp}
-    />
-  </div>
-</section>
+              <IntelligenceCard
+                title="Training Impact"
+                description="Evaluate whether completed training produced measurable competency improvement and target attainment."
+                href="/admin/training-impact"
+                action="Analyze impact"
+                icon={TrendingUp}
+              />
+            </div>
+          </section>
 
           <Card>
             <CardHeader>
@@ -404,7 +400,7 @@ const adminLinks = [
   { label: "Manage Users", href: "/admin/users" },
   { label: "Manage Courses", href: "/admin/courses" },
   { label: "Manage Competencies", href: "/admin/competencies" },
-  { label: "Competency Heatmap", href: "/admin/heatmap" },
+  { label: "Capacity Grid", href: "/admin/heatmap" },
   { label: "Development Plans", href: "/admin/development-plans" },
   { label: "Certificates", href: "/admin/certificates" },
 ] as const;
@@ -477,9 +473,7 @@ function IntelligenceCard({
           <Icon className="size-5 text-muted-foreground" />
         </div>
 
-        <CardTitle className="text-lg">
-          {title}
-        </CardTitle>
+        <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col">

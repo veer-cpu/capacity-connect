@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AssignOrganizationDialog } from "@/components/admin/users/assign-organization-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  getJobRoles,
+  getOrganizationalUnits,
+} from "@/lib/admin/get-organization";
 import { getAdminUsers } from "@/lib/admin/get-users";
 import { requireRole } from "@/lib/auth/require-role";
 import {
@@ -40,7 +45,14 @@ import {
 export default async function AdminUsersPage() {
   const { user } = await requireRole("admin");
   const currentUserId = user.id;
-  const users = await getAdminUsers();
+  const [users, units, roles] = await Promise.all([
+    getAdminUsers(),
+    getOrganizationalUnits(),
+    getJobRoles(),
+  ]);
+
+  const unitNameById = new Map(units.map((unit) => [unit.id, unit.name]));
+  const roleNameById = new Map(roles.map((role) => [role.id, role.name]));
 
   const totalUsers = users.length;
   const pendingApproval = users.filter((item) => !item.isApproved).length;
@@ -109,6 +121,8 @@ export default async function AdminUsersPage() {
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Department</TableHead>
+                    <TableHead>Organizational Unit</TableHead>
+                    <TableHead>Job Role</TableHead>
                     <TableHead>Approval</TableHead>
                     <TableHead>Account Status</TableHead>
                     <TableHead className="min-w-80">Actions</TableHead>
@@ -129,6 +143,16 @@ export default async function AdminUsersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>{item.department ?? "—"}</TableCell>
+                      <TableCell>
+                        {item.organizationalUnitId
+                          ? (unitNameById.get(item.organizationalUnitId) ?? "—")
+                          : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {item.jobRoleId
+                          ? (roleNameById.get(item.jobRoleId) ?? "—")
+                          : "—"}
+                      </TableCell>
                       <TableCell>
                         <StatusBadge
                           status={item.isApproved ? "Approved" : "Pending"}
@@ -201,10 +225,10 @@ export default async function AdminUsersPage() {
                                 value={item.userId}
                               />
                               <Select
-  key={`${item.userId}-${item.role}`}
-  name="newRole"
-  defaultValue={item.role}
->
+                                key={`${item.userId}-${item.role}`}
+                                name="newRole"
+                                defaultValue={item.role}
+                              >
                                 <SelectTrigger
                                   size="sm"
                                   aria-label={`Role for ${item.fullName}`}
@@ -224,6 +248,17 @@ export default async function AdminUsersPage() {
                                 Change Role
                               </Button>
                             </form>
+                          )}
+
+                          {item.role === "trainee" && (
+                            <AssignOrganizationDialog
+                              userId={item.userId}
+                              fullName={item.fullName}
+                              organizationalUnitId={item.organizationalUnitId}
+                              jobRoleId={item.jobRoleId}
+                              units={units}
+                              roles={roles}
+                            />
                           )}
                         </div>
                       </TableCell>

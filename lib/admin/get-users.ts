@@ -11,6 +11,8 @@ export type AdminUser = {
   isApproved: boolean;
   isActive: boolean;
   createdAt: string;
+  organizationalUnitId: string | null;
+  jobRoleId: string | null;
 };
 
 type AdminUserRow = {
@@ -23,6 +25,12 @@ type AdminUserRow = {
   is_approved: boolean | null;
   is_active: boolean | null;
   created_at: string;
+};
+
+type ProfileAssignmentRow = {
+  id: string;
+  organizational_unit_id: string | null;
+  job_role_id: string | null;
 };
 
 export async function getAdminUsers(): Promise<AdminUser[]> {
@@ -43,7 +51,40 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
     throw new Error(`Unable to load users: ${error.message}`);
   }
 
-  return (data ?? []).map((row: AdminUserRow) => ({
+  const rows = (data ?? []) as AdminUserRow[];
+  const userIds = rows.map((row) => row.user_id);
+
+  const assignmentById = new Map<
+    string,
+    { organizationalUnitId: string | null; jobRoleId: string | null }
+  >();
+
+  if (userIds.length > 0) {
+    const { data: assignmentRows, error: assignmentError } = await supabase
+      .from("profiles")
+      .select("id, organizational_unit_id, job_role_id")
+      .in("id", userIds);
+
+    if (assignmentError) {
+      console.error("Unable to load user organization assignments:", {
+        message: assignmentError.message,
+        code: assignmentError.code,
+        details: assignmentError.details,
+        hint: assignmentError.hint,
+      });
+
+      throw new Error(`Unable to load users: ${assignmentError.message}`);
+    }
+
+    for (const row of (assignmentRows ?? []) as ProfileAssignmentRow[]) {
+      assignmentById.set(row.id, {
+        organizationalUnitId: row.organizational_unit_id,
+        jobRoleId: row.job_role_id,
+      });
+    }
+  }
+
+  return rows.map((row) => ({
     userId: row.user_id,
     fullName: row.full_name,
     email: row.email,
@@ -53,5 +94,8 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
     isApproved: Boolean(row.is_approved),
     isActive: Boolean(row.is_active),
     createdAt: row.created_at,
+    organizationalUnitId:
+      assignmentById.get(row.user_id)?.organizationalUnitId ?? null,
+    jobRoleId: assignmentById.get(row.user_id)?.jobRoleId ?? null,
   }));
 }

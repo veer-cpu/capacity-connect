@@ -10,6 +10,11 @@ const userIdSchema = z.object({
   userId: z.string().uuid(),
 });
 
+const optionalUuid = z.preprocess(
+  (value) => (value === "" || value === "none" ? undefined : value),
+  z.string().uuid().optional()
+);
+
 async function performAdminAction(
   rpcName: "admin_approve_user" | "admin_deactivate_user" | "admin_reactivate_user",
   userId: string
@@ -137,3 +142,47 @@ export async function reactivateUser(formData: FormData): Promise<void> {
   await performAdminAction("admin_reactivate_user", parsed.data.userId);
   revalidatePath("/admin/users");
 }
+
+const assignTraineeOrganizationSchema = z.object({
+  userId: z.string().uuid(),
+  organizationalUnitId: optionalUuid,
+  jobRoleId: optionalUuid,
+});
+
+export async function assignTraineeOrganization(
+  formData: FormData
+): Promise<void> {
+  await requireRole("admin");
+
+  const parsed = assignTraineeOrganizationSchema.safeParse({
+    userId: formData.get("userId"),
+    organizationalUnitId: formData.get("organizationalUnitId"),
+    jobRoleId: formData.get("jobRoleId"),
+  });
+
+  if (!parsed.success) {
+    throw new Error("Invalid organization assignment request.");
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_assign_trainee_organization", {
+    p_user_id: parsed.data.userId,
+    p_organizational_unit_id: parsed.data.organizationalUnitId ?? null,
+    p_job_role_id: parsed.data.jobRoleId ?? null,
+  });
+
+  if (error) {
+    console.error("Unable to assign trainee organization:", {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
+    throw new Error(
+      "Unable to update the organization assignment. Please try again."
+    );
+  }
+
+  revalidatePath("/admin/users");
+}
+
