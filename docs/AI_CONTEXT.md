@@ -302,3 +302,15 @@ Target reports:
 
 CSV export should export the currently filtered/visible real data.
 Do not fabricate values.
+## Database reproducibility
+
+Goal:
+A fresh Supabase project should be able to recreate the application schema and trusted functions from version-controlled migrations.
+
+Important:
+- Do not include auth.users data
+- Do not include secrets
+- Do not include vault data
+- Do not include live user data
+- Preserve RLS, grants, functions, constraints, indexes, storage policies, and required buckets
+- Prefer idempotent/order-safe migrations

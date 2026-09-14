@@ -49,3 +49,5 @@ Thumbs.db
 
 # logs
 *.log
+
+capacity-connect-schema-safe.sql
